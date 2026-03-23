@@ -5,11 +5,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { getProfile, saveProfile, getLogo, saveLogo, removeLogo } from "@/lib/invoiceStore";
+import { useSettingsStore } from "@/lib/settingsStore";
 import { FreelancerProfile } from "@/types/invoice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Save, CheckCircle2, Upload, X, User } from "lucide-react";
+import { Save, CheckCircle2, Upload, X, User, Trash2, Download, UploadCloud } from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -39,7 +40,11 @@ export default function SettingsPage() {
   const [logo, setLogo] = useState<string>("");
   const [logoError, setLogoError] = useState<string>("");
   const [dragOver, setDragOver] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const settings = useSettingsStore((s) => s.settings);
+  const updateSettings = useSettingsStore((s) => s.updateSettings);
 
   const {
     register,
@@ -65,6 +70,7 @@ export default function SettingsPage() {
     const profile = getProfile();
     reset(profile);
     setLogo(getLogo());
+    useSettingsStore.persist.rehydrate();
     setMounted(true);
   }, [reset]);
 
@@ -124,8 +130,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Save your freelancer profile. This info will auto-fill on every new
-          invoice.
+          Manage your profile, invoice defaults, and data.
         </p>
       </div>
 
@@ -287,6 +292,126 @@ export default function SettingsPage() {
             )}
           </div>
         </form>
+      </div>
+
+      {/* Invoice Settings */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          Invoice Settings
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+            <Input
+              id="taxRate"
+              type="number"
+              min={0}
+              max={100}
+              value={settings.defaultTaxRate}
+              onChange={(e) => updateSettings({ defaultTaxRate: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="paymentTerms">Payment Terms (days)</Label>
+            <Input
+              id="paymentTerms"
+              type="number"
+              min={0}
+              value={settings.defaultPaymentTerms}
+              onChange={(e) => updateSettings({ defaultPaymentTerms: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="currency">Default Currency</Label>
+            <select
+              id="currency"
+              value={settings.defaultCurrency}
+              onChange={(e) => updateSettings({ defaultCurrency: e.target.value as 'IDR' | 'USD' })}
+              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm"
+            >
+              <option value="IDR">IDR - Indonesian Rupiah</option>
+              <option value="USD">USD - US Dollar</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 2000); }}
+          >
+            {settingsSaved ? <><CheckCircle2 className="size-3.5 mr-1" /> Saved</> : <><Save className="size-3.5 mr-1" /> Save Settings</>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Data Management */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          Data Management
+        </h2>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const keys = ['project-storage', 'client-storage', 'finance-storage', 'time-storage', 'settings-storage', 'invoices', 'invoice-profile', 'invoice-logo'];
+                const data: Record<string, unknown> = {};
+                keys.forEach((k) => { const v = localStorage.getItem(k); if (v) data[k] = JSON.parse(v); });
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `freelance-os-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="size-3.5 mr-1" /> Export All Data
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    try {
+                      const data = JSON.parse(ev.target?.result as string);
+                      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                      window.location.reload();
+                    } catch { alert('Invalid backup file'); }
+                  };
+                  reader.readAsText(file);
+                };
+                input.click();
+              }}
+            >
+              <UploadCloud className="size-3.5 mr-1" /> Import Data
+            </Button>
+          </div>
+          <div className="pt-3 border-t border-border">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm('Are you sure? This will delete ALL your data including projects, clients, invoices, and time logs. This action cannot be undone.')) {
+                  ['project-storage', 'client-storage', 'finance-storage', 'time-storage', 'settings-storage', 'invoices', 'invoice-profile', 'invoice-logo', 'business-os-seeded'].forEach((k) => localStorage.removeItem(k));
+                  window.location.reload();
+                }
+              }}
+            >
+              <Trash2 className="size-3.5 mr-1" /> Clear All Data
+            </Button>
+            <p className="text-xs text-muted-foreground mt-1.5">This will permanently delete all your data. Export a backup first.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

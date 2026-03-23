@@ -1,17 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import MainContent from "@/components/MainContent";
+import { Toaster } from "sonner";
 
-const inter = Inter({
-  variable: "--font-inter",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "InvoiceGen - Invoice Generator for Freelancers",
-  description: "Modern invoice generator for freelance software engineers",
+  title: "Freelance OS - Business Management for Freelancers",
+  description: "Professional business management system for freelancers — projects, invoices, clients, finance & time tracking",
 };
 
 export default function RootLayout({
@@ -21,9 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${dmSans.variable} ${dmMono.variable} font-sans antialiased bg-background text-foreground`}>
         <Sidebar />
         <MainContent>{children}</MainContent>
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );

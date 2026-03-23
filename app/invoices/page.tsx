@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import {
   getInvoices,
-  deleteInvoice,
+  softDeleteInvoice,
+  restoreInvoice,
   ensureSampleData,
 } from "@/lib/invoiceStore";
 import { Invoice } from "@/types/invoice";
 import SavedInvoiceCard from "@/components/SavedInvoiceCard";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { FilePlus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { showDeleted } from "@/lib/toasts";
 import Link from "next/link";
 
 export default function InvoicesPage() {
@@ -18,6 +21,7 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [mounted, setMounted] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
   useEffect(() => {
     ensureSampleData();
@@ -26,8 +30,14 @@ export default function InvoicesPage() {
   }, []);
 
   const handleDelete = (id: string) => {
-    deleteInvoice(id);
+    const inv = invoices.find((i) => i.id === id);
+    softDeleteInvoice(id);
     setInvoices(getInvoices());
+    showDeleted("Invoice", () => {
+      restoreInvoice(id);
+      setInvoices(getInvoices());
+    });
+    setDeleteTarget(null);
   };
 
   if (!mounted) return null;

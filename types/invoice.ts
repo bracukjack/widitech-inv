@@ -52,6 +52,10 @@ export interface Invoice {
   // Timestamps
   createdAt: string;
   updatedAt: string;
+
+  // Soft delete
+  isDeleted: boolean;
+  deletedAt: string | null;
 }
 
 export interface FreelancerProfile {

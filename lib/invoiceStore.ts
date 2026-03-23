@@ -8,19 +8,33 @@ const LOGO_KEY = "widitech-logo";
 
 // --- Invoice helpers ---
 
-export function getInvoices(): Invoice[] {
+function getAllInvoicesRaw(): Invoice[] {
   if (typeof window === "undefined") return [];
   const data = localStorage.getItem(INVOICES_KEY);
   if (!data) return [];
   try {
-    return JSON.parse(data) as Invoice[];
+    const invoices = JSON.parse(data) as Invoice[];
+    // migrate soft delete fields
+    return invoices.map((inv) => ({
+      ...inv,
+      isDeleted: inv.isDeleted ?? false,
+      deletedAt: inv.deletedAt ?? null,
+    }));
   } catch {
     return [];
   }
 }
 
+export function getInvoices(): Invoice[] {
+  return getAllInvoicesRaw().filter((inv) => !inv.isDeleted);
+}
+
+export function getDeletedInvoices(): Invoice[] {
+  return getAllInvoicesRaw().filter((inv) => inv.isDeleted);
+}
+
 export function getInvoiceById(id: string): Invoice | undefined {
-  const inv = getInvoices().find((inv) => inv.id === id);
+  const inv = getAllInvoicesRaw().find((inv) => inv.id === id);
   if (!inv) return undefined;
   // Migrate older invoices missing new fields
   const defaults: Partial<Invoice> = {
@@ -33,7 +47,7 @@ export function getInvoiceById(id: string): Invoice | undefined {
 }
 
 export function saveInvoice(invoice: Invoice): void {
-  const invoices = getInvoices();
+  const invoices = getAllInvoicesRaw();
   const idx = invoices.findIndex((inv) => inv.id === invoice.id);
   if (idx >= 0) {
     invoices[idx] = { ...invoice, updatedAt: new Date().toISOString() };
@@ -48,7 +62,25 @@ export function saveInvoice(invoice: Invoice): void {
 }
 
 export function deleteInvoice(id: string): void {
-  const invoices = getInvoices().filter((inv) => inv.id !== id);
+  softDeleteInvoice(id);
+}
+
+export function softDeleteInvoice(id: string): void {
+  const invoices = getAllInvoicesRaw().map((inv) =>
+    inv.id === id ? { ...inv, isDeleted: true, deletedAt: new Date().toISOString() } : inv
+  );
+  localStorage.setItem(INVOICES_KEY, JSON.stringify(invoices));
+}
+
+export function restoreInvoice(id: string): void {
+  const invoices = getAllInvoicesRaw().map((inv) =>
+    inv.id === id ? { ...inv, isDeleted: false, deletedAt: null } : inv
+  );
+  localStorage.setItem(INVOICES_KEY, JSON.stringify(invoices));
+}
+
+export function permanentDeleteInvoice(id: string): void {
+  const invoices = getAllInvoicesRaw().filter((inv) => inv.id !== id);
   localStorage.setItem(INVOICES_KEY, JSON.stringify(invoices));
 }
 
@@ -116,6 +148,8 @@ export function createEmptyInvoice(profile?: FreelancerProfile): Invoice {
     theme: "professional",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    isDeleted: false,
+    deletedAt: null,
   };
 }
 
@@ -154,12 +188,14 @@ export function getSampleInvoice(): Invoice {
     theme: "professional",
     createdAt: "2026-03-15T08:00:00.000Z",
     updatedAt: "2026-03-15T08:00:00.000Z",
+    isDeleted: false,
+    deletedAt: null,
   };
 }
 
 export function ensureSampleData(): void {
   if (typeof window === "undefined") return;
-  const invoices = getInvoices();
+  const invoices = getAllInvoicesRaw();
   if (invoices.length === 0) {
     saveInvoice(getSampleInvoice());
     // Set counter so next is 002
@@ -175,6 +211,8 @@ export function duplicateInvoice(invoice: Invoice): Invoice {
     status: "Draft",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    isDeleted: false,
+    deletedAt: null,
   };
 }
 
