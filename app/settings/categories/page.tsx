@@ -336,7 +336,7 @@ export default function CategoriesSettingsPage() {
                   {cat.name}
                 </span>
                 {cat.isDefault && (
-                  <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  <span className="text-[12px] uppercase tracking-wider font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     default
                   </span>
                 )}

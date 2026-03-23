@@ -110,7 +110,7 @@ export default function TrashPage() {
     deletedAt ? format(new Date(deletedAt), "MMM dd, yyyy HH:mm") : "—";
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       <Breadcrumb items={[
         { label: "Home", href: "/" },
         { label: "Trash" },
@@ -138,7 +138,7 @@ export default function TrashPage() {
             <tab.icon className="size-3.5" />
             {tab.label}
             {tab.count > 0 && (
-              <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold">{tab.count}</span>
+              <span className="text-[12px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold">{tab.count}</span>
             )}
           </button>
         ))}

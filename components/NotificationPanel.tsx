@@ -80,7 +80,7 @@ export default function NotificationPanel({ open, onClose }: NotificationPanelPr
                         {n.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.message}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">
+                      <p className="text-[12px] text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                       </p>
                     </div>

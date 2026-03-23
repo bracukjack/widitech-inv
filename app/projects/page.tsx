@@ -108,7 +108,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -205,11 +205,11 @@ export default function ProjectsPage() {
                             <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                               <div className="h-full bg-primary rounded-full" style={{ width: `${project.progress}%` }} />
                             </div>
-                            <span className="text-[10px] text-muted-foreground font-mono">{project.progress}%</span>
+                            <span className="text-[12px] text-muted-foreground font-mono">{project.progress}%</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono text-muted-foreground">{formatIDR(project.contractValue)}</span>
-                            <span className={`text-[10px] ${daysLeft < 7 && daysLeft >= 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                            <span className="text-[12px] font-mono text-muted-foreground">{formatIDR(project.contractValue)}</span>
+                            <span className={`text-[12px] ${daysLeft < 7 && daysLeft >= 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                               {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
                             </span>
                           </div>

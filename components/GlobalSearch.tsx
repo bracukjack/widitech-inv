@@ -211,7 +211,7 @@ export default function GlobalSearch() {
               <div key={result.id}>
                 {showHeader && (
                   <div className="px-3 pt-2 pb-1">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
                       {groupLabels[result.type]}
                     </span>
                   </div>
@@ -232,7 +232,7 @@ export default function GlobalSearch() {
                     )}
                   </div>
                   {result.status && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted shrink-0" style={{ color: result.statusColor }}>
+                    <span className="text-[12px] font-medium px-2 py-0.5 rounded-full bg-muted shrink-0" style={{ color: result.statusColor }}>
                       {result.status}
                     </span>
                   )}

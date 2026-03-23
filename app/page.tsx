@@ -122,7 +122,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-8">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-8">
       {/* Header + Quick Actions */}
       <div className="flex items-center justify-between">
         <div>

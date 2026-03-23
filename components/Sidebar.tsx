@@ -170,7 +170,7 @@ export default function Sidebar() {
           >
             <Bell className="size-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 size-4 rounded-full bg-red-500 text-white text-[12px] font-bold flex items-center justify-center">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -182,14 +182,14 @@ export default function Sidebar() {
           {navSections.map((section, sIdx) => (
             <div key={sIdx} className={sIdx > 0 ? "mt-5" : ""}>
               {section.label && !collapsed && (
-                <div className="px-3 mb-1.5 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+                <div className="px-2 mb-1.5 text-[12px] font-semibold tracking-widest text-sidebar-accent-foreground uppercase">
                   {section.label}
                 </div>
               )}
               {section.label && collapsed && (
                 <div className="hidden lg:block border-t border-sidebar-border my-2" />
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {section.items.map((item) => {
                   const isActive =
                     pathname === item.href ||
@@ -203,15 +203,15 @@ export default function Sidebar() {
                       onClick={() => setOpen(false)}
                       title={collapsed ? item.label : undefined}
                       className={cn(
-                        "flex items-center gap-[9px] rounded-lg text-[13.5px] font-medium transition-colors relative group h-[34px]",
-                        collapsed ? "lg:justify-center lg:px-0 lg:py-2.5 px-3 py-2" : "px-3 py-2",
+                        "flex items-center gap-2 rounded-lg text-xs font-medium transition-colors relative group h-[34px]",
+                        collapsed ? "lg:justify-center lg:px-0 lg:py-2.5 px-2 py-3" : "px-2 py-3",
                         isActive
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                       )}
                     >
                       <span className="relative">
-                        <item.icon className="w-[15px] h-[15px] shrink-0" />
+                        <item.icon className="w-4 h-4 shrink-0" />
                         {isTimeTrack && activeTimer && (
                           <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-green-500 animate-pulse" />
                         )}
@@ -222,13 +222,13 @@ export default function Sidebar() {
                           <span className="font-mono text-xs text-muted-foreground">{elapsed}</span>
                         )}
                         {isTrash && totalDeletedCount > 0 && (
-                          <span className="ml-auto text-[10px] font-semibold bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 leading-none">
+                          <span className="ml-auto text-xs font-semibold bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 leading-none">
                             {totalDeletedCount}
                           </span>
                         )}
                       </span>
                       {collapsed && (
-                        <span className="hidden lg:block absolute left-full ml-2 px-2 py-1 rounded-md bg-popover text-popover-foreground text-xs font-medium shadow-md border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                        <span className="hidden lg:block absolute left-full ml-2 px-2 py-1 rounded-md bg-popover text-popover-foreground text-sm font-medium shadow-md border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                           {item.label}
                         </span>
                       )}

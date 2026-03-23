@@ -151,7 +151,7 @@ export default function TimeTrackerPage() {
   const monthBillable = timeLogs.filter((l) => { const d = new Date(l.startTime); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && l.billable; }).reduce((sum, l) => sum + l.billableAmount, 0);
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground tracking-tight">Time Tracker</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Track your working hours</p>

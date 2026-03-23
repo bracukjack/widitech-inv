@@ -58,7 +58,7 @@ export default function ProjectDetailPage() {
 
   if (!mounted) {
     return (
-      <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+      <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
         <Skeleton className="h-4 w-48" />
         <div className="flex items-start justify-between">
           <div className="space-y-2">
@@ -128,7 +128,7 @@ export default function ProjectDetailPage() {
   ];
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       {/* Breadcrumb */}
       <Breadcrumb items={[
         { label: "Home", href: "/" },
@@ -300,7 +300,7 @@ export default function ProjectDetailPage() {
                   <span className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                     {task.title}
                   </span>
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                  <span className={`text-[12px] font-medium px-1.5 py-0.5 rounded-full ${
                     task.priority === 'high' ? 'bg-red-100 text-red-700' :
                     task.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
                     'bg-gray-100 text-gray-600'

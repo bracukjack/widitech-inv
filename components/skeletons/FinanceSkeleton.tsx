@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function FinanceSkeleton() {
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       <div>
         <Skeleton className="h-6 w-20" />
         <Skeleton className="h-4 w-48 mt-2" />

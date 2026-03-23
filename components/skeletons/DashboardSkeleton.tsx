@@ -16,7 +16,7 @@ function StatCardSkeleton() {
 
 export default function DashboardSkeleton() {
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-8">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

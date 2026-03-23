@@ -78,7 +78,7 @@ export default function EditInvoicePage() {
   if (!invoice) return null;
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+    <div className="p-6 lg:p-8 w-full mx-auto">
       <Breadcrumb items={[
         { label: "Home", href: "/" },
         { label: "Invoices", href: "/invoices" },

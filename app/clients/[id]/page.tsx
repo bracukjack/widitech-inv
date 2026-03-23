@@ -78,7 +78,7 @@ export default function ClientDetailPage() {
   const activeNotes = client.notes.filter((n) => !n.isDeleted);
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       <Breadcrumb items={[
         { label: "Home", href: "/" },
         { label: "Clients", href: "/clients" },
@@ -136,7 +136,7 @@ export default function ClientDetailPage() {
                       <div>
                         <p className="text-sm font-medium text-foreground">{project.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: status.bg, color: status.text }}>
+                          <span className="text-[12px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: status.bg, color: status.text }}>
                             {status.label}
                           </span>
                           <span className="text-xs text-muted-foreground">{format(new Date(project.startDate), 'MMM yyyy')}</span>

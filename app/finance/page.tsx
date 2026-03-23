@@ -143,7 +143,7 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-6 lg:p-8 w-full mx-auto space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-foreground tracking-tight">Finance</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Track your revenue and expenses</p>

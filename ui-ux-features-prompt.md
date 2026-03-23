@@ -38,7 +38,7 @@ Stat label:            text-xs     = 12px, font-medium, uppercase, tracking-wide
 Table header:          text-xs     = 12px, font-medium, uppercase, tracking-wide, color text-muted
 Table cell:            text-sm     = 14px
 Sidebar nav item:      text-sm     = 13.5px
-Sidebar section label: text-[10px] = 10px, uppercase, tracking-widest, color text-muted
+Sidebar section label: text-[12px] = 10px, uppercase, tracking-widest, color text-muted
 Button (default):      text-sm     = 14px, font-medium
 Button (sm):           text-xs     = 12px, font-medium
 Input:                 text-sm     = 14px
@@ -72,7 +72,7 @@ Badge padding:             px-2 py-0.5       = 8px horizontal, 2px vertical
 ```
 SIDEBAR:
 - Brand section: padding 20px 18px, brand name text-[15px] font-semibold
-- Nav section labels: text-[10px] uppercase tracking-widest, margin-top 20px first occurrence
+- Nav section labels: text-[12px] uppercase tracking-widest, margin-top 20px first occurrence
 - Nav items: text-[13.5px], icon size exactly 15x15px, gap 9px, height 34px
 - Footer avatar: 30x30px circle, name text-[13px], role text-[11px]
 
