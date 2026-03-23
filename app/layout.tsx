@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import MainContent from "@/components/MainContent";
-import { Toaster } from "sonner";
+import AppShell from "@/components/AppShell";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -30,9 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${dmMono.variable} font-sans antialiased bg-background text-foreground`}>
-        <Sidebar />
-        <MainContent>{children}</MainContent>
-        <Toaster position="bottom-right" richColors closeButton />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

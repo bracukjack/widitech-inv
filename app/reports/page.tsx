@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { Download, FileText, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#ec4899', '#06b6d4', '#f43f5e', '#8b5cf6'];
 
@@ -157,6 +158,11 @@ export default function ReportsPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Reports" },
+      ]} />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">Reports</h1>
@@ -166,7 +172,7 @@ export default function ReportsPage() {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+            className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
           >
             <option value="this-month">This Month</option>
             <option value="last-month">Last Month</option>

@@ -60,10 +60,10 @@ export default function TimeLogForm({ open, onOpenChange, onSubmit, defaultValue
             {mode === "create" ? "Log time spent on a project." : "Update time entry details."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
           <div>
             <Label>Project *</Label>
-            <select {...register("projectId")} className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm">
+            <select {...register("projectId")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
               <option value="">Select project...</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>

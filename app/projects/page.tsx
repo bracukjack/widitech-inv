@@ -22,12 +22,15 @@ import {
   Trash2,
   Pencil,
   MoreHorizontal,
+  Pin,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProjectForm from "@/components/ProjectForm";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import ProjectListSkeleton from "@/components/skeletons/ProjectListSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import { showCreated, showUpdated, showDeleted } from "@/lib/toasts";
 
 const CATEGORY_ICONS: Record<ProjectCategory, React.ReactNode> = {
@@ -63,7 +66,7 @@ export default function ProjectsPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <ProjectListSkeleton />;
 
   const getClientName = (clientId: string) => clients.find((c) => c.id === clientId)?.name || "Unknown";
 
@@ -86,6 +89,7 @@ export default function ProjectsPage() {
       tasks: [],
       attachments: [],
       deliveredDate: undefined,
+      isPinned: false,
     });
     showCreated("Project");
   };
@@ -108,8 +112,8 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Projects</h1>
-          <p className="text-muted-foreground text-sm mt-1">{projects.length} total projects</p>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Projects</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{projects.length} total projects</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => setShowCreateForm(true)}>
@@ -135,7 +139,7 @@ export default function ProjectsPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as ProjectStatus | "all")}
-          className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option value="all">All Statuses</option>
           {PROJECT_STATUSES.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
@@ -143,15 +147,26 @@ export default function ProjectsPage() {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as ProjectCategory | "all")}
-          className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+          className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
         >
           <option value="all">All Categories</option>
           {(Object.keys(CATEGORY_CONFIG) as ProjectCategory[]).map((c) => <option key={c} value={c}>{CATEGORY_CONFIG[c].label}</option>)}
         </select>
       </div>
 
+      {/* Empty State */}
+      {projects.length === 0 && (
+        <EmptyState
+          icon={FolderKanban}
+          title="No projects yet"
+          description="Create your first project to start tracking your work"
+          action={{ label: "New Project", onClick: () => setShowCreateForm(true) }}
+          size="lg"
+        />
+      )}
+
       {/* Kanban View */}
-      {view === "kanban" && (
+      {projects.length > 0 && view === "kanban" && (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {PROJECT_STATUSES.map((status) => {
             const statusProjects = filtered.filter((p) => p.status === status);
@@ -160,21 +175,28 @@ export default function ProjectsPage() {
               <div key={status} className="min-w-[260px] max-w-[260px] flex-shrink-0">
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <span className="size-2 rounded-full" style={{ backgroundColor: cfg.text }} />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{cfg.label}</span>
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{cfg.label}</span>
                   <span className="text-xs text-muted-foreground ml-auto">{statusProjects.length}</span>
                 </div>
                 <div className="space-y-2">
                   {statusProjects.map((project) => {
                     const daysLeft = differenceInDays(new Date(project.deadline), now);
                     return (
-                      <Link key={project.id} href={`/projects/${project.id}`}>
-                        <div className="bg-card border border-border rounded-xl p-3.5 hover:border-primary/30 transition-colors cursor-pointer">
-                          <div className="flex items-start justify-between mb-1.5">
-                            <p className="text-sm font-medium text-foreground leading-tight">{project.name}</p>
+                      <div key={project.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-primary/30 transition-colors cursor-pointer relative group">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); useProjectStore.getState().togglePin(project.id); }}
+                          className={`absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${project.isPinned ? '!opacity-100 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                          title={project.isPinned ? 'Unpin project' : 'Pin project'}
+                        >
+                          <Pin className="size-3.5" fill={project.isPinned ? 'currentColor' : 'none'} />
+                        </button>
+                        <Link href={`/projects/${project.id}`}>
+                        <div className="flex items-start justify-between mb-1.5">
+                            <p className="text-sm font-semibold text-foreground leading-tight pr-6">{project.name}</p>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">{getClientName(project.clientId)}</p>
                           <div className="flex items-center gap-1.5 mb-2">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                               {CATEGORY_ICONS[project.category]}
                               {CATEGORY_CONFIG[project.category].label}
                             </span>
@@ -191,13 +213,13 @@ export default function ProjectsPage() {
                               {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d left`}
                             </span>
                           </div>
-                        </div>
-                      </Link>
+                        </Link>
+                      </div>
                     );
                   })}
                   {statusProjects.length === 0 && (
                     <div className="border border-dashed border-border rounded-xl p-4 text-center text-xs text-muted-foreground">
-                      No projects
+                      No projects in this status
                     </div>
                   )}
                 </div>
@@ -208,19 +230,20 @@ export default function ProjectsPage() {
       )}
 
       {/* List View */}
-      {view === "list" && (
+      {projects.length > 0 && view === "list" && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Name</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Client</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Category</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Status</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Progress</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Deadline</th>
-                <th className="text-right text-xs font-semibold text-muted-foreground px-4 py-3">Value</th>
-                <th className="px-4 py-3 w-10"></th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Name</th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Client</th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Category</th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Status</th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Progress</th>
+                <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Deadline</th>
+                <th className="text-right text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Value</th>
+                <th className="px-4 py-2.5 w-10"></th>
+                <th className="px-4 py-2.5 w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -230,17 +253,26 @@ export default function ProjectsPage() {
                 return (
                   <tr key={project.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
-                      <Link href={`/projects/${project.id}`} className="text-sm font-medium text-foreground hover:text-primary">{project.name}</Link>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); useProjectStore.getState().togglePin(project.id); }}
+                          className={`p-0.5 rounded transition-colors ${project.isPinned ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'}`}
+                          title={project.isPinned ? 'Unpin project' : 'Pin project'}
+                        >
+                          <Pin className="size-3.5" fill={project.isPinned ? 'currentColor' : 'none'} />
+                        </button>
+                        <Link href={`/projects/${project.id}`} className="text-sm font-medium text-foreground hover:text-primary">{project.name}</Link>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{getClientName(project.clientId)}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                         {CATEGORY_ICONS[project.category]}
                         {CATEGORY_CONFIG[project.category].label}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: status.bg, color: status.text }}>
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: status.bg, color: status.text }}>
                         {status.label}
                       </span>
                     </td>

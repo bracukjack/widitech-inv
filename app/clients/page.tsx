@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ClientForm from "@/components/ClientForm";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import ClientListSkeleton from "@/components/skeletons/ClientListSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import { showCreated, showUpdated, showDeleted, showError } from "@/lib/toasts";
 
 export default function ClientsPage() {
@@ -37,7 +39,7 @@ export default function ClientsPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <ClientListSkeleton />;
 
   const filtered = clients.filter((c) => {
     if (!search) return true;
@@ -77,14 +79,22 @@ export default function ClientsPage() {
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Clients</h1>
-          <p className="text-muted-foreground text-sm mt-1">{clients.length} clients</p>
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Clients</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{clients.length} clients</p>
         </div>
         <Button onClick={() => setShowCreateForm(true)}>
           <Plus className="size-4 mr-1" /> New Client
         </Button>
       </div>
 
+      {clients.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No clients yet"
+          description="Add your first client to start managing relationships"
+          action={{ label: "Add Client", onClick: () => setShowCreateForm(true) }}
+        />
+      ) : (<>
       <div className="relative w-64">
         <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search clients..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
@@ -110,7 +120,7 @@ export default function ClientsPage() {
                 <Link href={`/clients/${client.id}`} className="block">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-foreground">{client.name}</h3>
+                      <h3 className="text-sm font-semibold text-foreground">{client.name}</h3>
                       {client.company && <p className="text-sm text-muted-foreground">{client.company}</p>}
                     </div>
                     <div className="flex items-center gap-0.5">
@@ -121,7 +131,7 @@ export default function ClientsPage() {
                   </div>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     {client.tags.map((tag) => (
-                      <span key={tag} className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
+                      <span key={tag} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                     ))}
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -161,6 +171,7 @@ export default function ClientsPage() {
           })}
         </div>
       )}
+      </>)}
 
       {/* Create Client Form */}
       <ClientForm

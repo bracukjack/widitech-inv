@@ -10,6 +10,7 @@ import { useInvoiceDraftStore } from "@/lib/invoiceDraftStore";
 import { FileWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export default function EditInvoicePage() {
   const router = useRouter();
@@ -78,6 +79,13 @@ export default function EditInvoicePage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Invoices", href: "/invoices" },
+        { label: `Invoice ${invoice.invoiceNumber}`, href: `/invoice/${id}` },
+        { label: "Edit" },
+      ]} />
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Edit Invoice</h1>

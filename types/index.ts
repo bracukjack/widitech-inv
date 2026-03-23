@@ -64,6 +64,7 @@ export interface Project {
   attachments: string[];
   hourlyRate?: number;
   estimatedHours?: number;
+  isPinned: boolean;
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
@@ -170,4 +171,82 @@ export interface UserSettings {
   defaultTaxRate: number;
   defaultCurrency: 'IDR' | 'USD';
   defaultPaymentTerms: number;
+  invoicePrefix: string;
+  hasCompletedOnboarding: boolean;
+}
+
+// ====== PROJECT CATEGORY TYPES ======
+
+export type RateUnit = 'per_hour' | 'per_session' | 'per_project' | 'per_day';
+
+export interface ProjectCategoryFull {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  color: string;
+  icon: string;
+  defaultRate: number;
+  rateUnit: RateUnit;
+  subCategories: SubCategory[];
+  isDefault: boolean;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubCategory {
+  id: string;
+  name: string;
+  defaultRate?: number;
+  createdAt: string;
+}
+
+// ====== NOTIFICATION TYPES ======
+
+export type NotificationType =
+  | 'deadline_warning'
+  | 'deadline_overdue'
+  | 'invoice_overdue'
+  | 'invoice_due_soon'
+  | 'payment_received'
+  | 'project_completed';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entityId: string;
+  entityType: 'project' | 'invoice';
+  isRead: boolean;
+  createdAt: string;
+  link: string;
+}
+
+// ====== ACTIVITY LOG TYPES ======
+
+export type ActivityType =
+  | 'project_created'
+  | 'project_updated'
+  | 'status_changed'
+  | 'progress_updated'
+  | 'task_added'
+  | 'task_completed'
+  | 'task_deleted'
+  | 'invoice_created'
+  | 'invoice_paid'
+  | 'time_logged'
+  | 'note_added'
+  | 'file_attached';
+
+export interface ActivityLog {
+  id: string;
+  projectId: string;
+  type: ActivityType;
+  description: string;
+  meta?: Record<string, any>;
+  createdAt: string;
 }

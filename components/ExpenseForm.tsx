@@ -57,10 +57,10 @@ export default function ExpenseForm({ open, onOpenChange, onSubmit, defaultValue
             {mode === "create" ? "Record a new business expense." : "Update expense details."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
           <div>
             <Label>Category</Label>
-            <select {...register("category")} className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm">
+            <select {...register("category")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
               {(Object.keys(EXPENSE_CATEGORY_CONFIG) as ExpenseCategory[]).map((c) => (
                 <option key={c} value={c}>{EXPENSE_CATEGORY_CONFIG[c].label}</option>
               ))}

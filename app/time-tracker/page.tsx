@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import TimeLogForm from "@/components/TimeLogForm";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import TimeTrackerSkeleton from "@/components/skeletons/TimeTrackerSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import { showCreated, showUpdated, showDeleted } from "@/lib/toasts";
 
 export default function TimeTrackerPage() {
@@ -65,7 +67,7 @@ export default function TimeTrackerPage() {
     }
   }, [activeTimer]);
 
-  if (!mounted) return null;
+  if (!mounted) return <TimeTrackerSkeleton />;
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -151,8 +153,8 @@ export default function TimeTrackerPage() {
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Time Tracker</h1>
-        <p className="text-muted-foreground text-sm mt-1">Track your working hours</p>
+        <h1 className="text-xl font-semibold text-foreground tracking-tight">Time Tracker</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Track your working hours</p>
       </div>
 
       {/* Active Timer */}
@@ -198,21 +200,21 @@ export default function TimeTrackerPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Today</p>
-          <p className="text-lg font-bold font-mono">{(todayMinutes / 60).toFixed(1)}h</p>
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px] text-center">
+          <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-1">Today</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px]">{(todayMinutes / 60).toFixed(1)}h</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">This Week</p>
-          <p className="text-lg font-bold font-mono">{(weekMinutes / 60).toFixed(1)}h</p>
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px] text-center">
+          <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-1">This Week</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px]">{(weekMinutes / 60).toFixed(1)}h</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">This Month</p>
-          <p className="text-lg font-bold font-mono">{(monthMinutes / 60).toFixed(1)}h</p>
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px] text-center">
+          <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-1">This Month</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px]">{(monthMinutes / 60).toFixed(1)}h</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Billable (Month)</p>
-          <p className="text-lg font-bold font-mono text-green-600">{formatIDR(monthBillable)}</p>
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px] text-center">
+          <p className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground mb-1">Billable (Month)</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px] text-green-600">{formatIDR(monthBillable)}</p>
         </div>
       </div>
 
@@ -228,15 +230,15 @@ export default function TimeTrackerPage() {
 
 
         {Object.keys(grouped).length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <Timer className="size-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="font-medium">No time logs yet</p>
-            <p className="text-sm mt-1">Start the timer or add a manual entry</p>
-          </div>
+          <EmptyState
+            icon={Clock}
+            title="No time entries yet"
+            description="Start the timer to track your work hours"
+          />
         ) : (
           Object.entries(grouped).map(([label, logs]) => (
             <div key={label}>
-              <div className="px-4 py-2 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
+              <div className="px-4 py-2 bg-muted/50 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</div>
               <div className="divide-y divide-border">
                 {logs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors">
@@ -247,7 +249,7 @@ export default function TimeTrackerPage() {
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-mono font-medium">{(log.duration / 60).toFixed(1)}h</span>
                       {log.billable && <span className="text-xs font-mono text-green-600">{formatIDR(log.billableAmount)}</span>}
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${log.billable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${log.billable ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                         {log.billable ? 'Billable' : 'Non-billable'}
                       </span>
                       <button onClick={() => setEditLog(log)} className="text-muted-foreground hover:text-blue-600 transition-colors">

@@ -116,6 +116,10 @@
   --chart-5: #f472b6;
 }
 
+html {
+  font-size: 120%; /* scale all rem-based sizes up 20% */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

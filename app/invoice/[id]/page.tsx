@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export default function InvoiceDetailPage() {
   const router = useRouter();
@@ -100,6 +101,12 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Invoices", href: "/invoices" },
+        { label: `Invoice ${invoice.invoiceNumber}` },
+      ]} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">

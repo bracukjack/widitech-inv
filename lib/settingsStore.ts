@@ -14,11 +14,14 @@ const defaultSettings: UserSettings = {
   defaultTaxRate: 11,
   defaultCurrency: 'IDR',
   defaultPaymentTerms: 14,
+  invoicePrefix: 'INV',
+  hasCompletedOnboarding: false,
 };
 
 interface SettingsStore {
   settings: UserSettings;
   updateSettings: (updates: Partial<UserSettings>) => void;
+  setOnboardingComplete: () => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -27,6 +30,9 @@ export const useSettingsStore = create<SettingsStore>()(
       settings: defaultSettings,
       updateSettings: (updates) => set((state) => ({
         settings: { ...state.settings, ...updates },
+      })),
+      setOnboardingComplete: () => set((state) => ({
+        settings: { ...state.settings, hasCompletedOnboarding: true },
       })),
     }),
     {

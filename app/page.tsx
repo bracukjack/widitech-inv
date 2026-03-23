@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getInvoices, ensureSampleData } from "@/lib/invoiceStore";
 import { Invoice as LegacyInvoice } from "@/types/invoice";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -26,10 +27,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function DashboardPage() {
   const [invoices, setInvoices] = useState<LegacyInvoice[]>([]);
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   const projects = useProjectStore((s) => s.projects);
   const clients = useClientStore((s) => s.clients);
@@ -46,7 +50,7 @@ export default function DashboardPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <DashboardSkeleton />;
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -76,6 +80,8 @@ export default function DashboardPage() {
   const activeProjects = projects.filter(
     (p) => !['done', 'cancelled', 'lead'].includes(p.status)
   );
+
+  const pinnedProjects = projects.filter((p) => p.isPinned && !p.isDeleted);
 
   const unpaidInvoices = invoices.filter((i) => i.status !== "Paid");
   const unpaidTotal = unpaidInvoices.reduce((sum, inv) => {
@@ -120,8 +126,8 @@ export default function DashboardPage() {
       {/* Header + Quick Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
             Overview of your business activity
           </p>
         </div>
@@ -135,49 +141,93 @@ export default function DashboardPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <DollarSign className="size-5 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Revenue This Month</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Revenue This Month</span>
           </div>
-          <p className="text-2xl font-bold text-foreground font-mono">{formatIDR(totalRevMonth)}</p>
+          <p className="text-[26px] font-semibold text-foreground font-mono tracking-[-0.5px]">{formatIDR(totalRevMonth)}</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <FolderKanban className="size-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Active Projects</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Active Projects</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{activeProjects.length}</p>
+          <p className="text-[26px] font-semibold text-foreground font-mono tracking-[-0.5px]">{activeProjects.length}</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <FileText className="size-5 text-red-600 dark:text-red-400" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Unpaid Invoices</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Unpaid Invoices</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">{unpaidInvoices.length}</p>
+          <p className="text-[26px] font-semibold text-foreground font-mono tracking-[-0.5px]">{unpaidInvoices.length}</p>
           <p className="text-xs text-muted-foreground mt-1 font-mono">{formatIDR(unpaidTotal)}</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <TrendingUp className="size-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Net Profit This Month</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Net Profit This Month</span>
           </div>
-          <p className={`text-2xl font-bold font-mono ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-[26px] font-semibold font-mono tracking-[-0.5px] ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatIDR(netProfit)}
           </p>
         </div>
       </div>
+
+      {/* Pinned Projects */}
+      {pinnedProjects.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3">
+            📌 Pinned Projects <span className="text-muted-foreground font-normal">({pinnedProjects.length})</span>
+          </h2>
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-thin">
+            {pinnedProjects.map((project) => {
+              const status = STATUS_CONFIG[project.status];
+              const daysLeft = differenceInDays(new Date(project.deadline), now);
+              return (
+                <Link
+                  key={project.id}
+                  href={`/projects/${project.id}`}
+                  className="min-w-[280px] max-w-[320px] shrink-0 snap-start bg-card border border-border rounded-xl p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-foreground truncate">{project.name}</p>
+                    <span
+                      className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 ml-2"
+                      style={{ backgroundColor: status.bg, color: status.text }}
+                    >
+                      {status.label}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {project.category}
+                  </span>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${project.progress}%` }} />
+                    </div>
+                    <span className="text-xs text-muted-foreground font-mono">{project.progress}%</span>
+                  </div>
+                  <p className={`text-xs mt-2 ${daysLeft < 7 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
+                    {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Main Content: Two Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -188,12 +238,13 @@ export default function DashboardPage() {
             <Link href="/projects"><Button variant="ghost" size="sm">View All</Button></Link>
           </div>
           {sortedActive.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <FolderKanban className="size-10 mx-auto mb-3 text-muted-foreground/40" />
-              <p className="font-medium">No active projects</p>
-              <p className="text-sm mt-1">Start a new project to track your work</p>
-              <Link href="/projects"><Button size="sm" className="mt-3"><Plus className="size-3.5 mr-1" />New Project</Button></Link>
-            </div>
+            <EmptyState
+              icon={FolderKanban}
+              title="No active projects"
+              description="Create your first project to get started"
+              action={{ label: "Go to Projects", onClick: () => router.push("/projects") }}
+              size="sm"
+            />
           ) : (
             <div className="divide-y divide-border">
               {sortedActive.map((project) => {
@@ -208,9 +259,9 @@ export default function DashboardPage() {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{project.name}</p>
                         <span
-                          className="text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0"
+                          className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0"
                           style={{ backgroundColor: status.bg, color: status.text }}
                         >
                           {status.label}

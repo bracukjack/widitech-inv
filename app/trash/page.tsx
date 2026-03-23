@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { showRestored, showPermanentlyDeleted } from "@/lib/toasts";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 type TabId = "projects" | "clients" | "expenses" | "timelogs" | "invoices";
 
@@ -110,6 +111,11 @@ export default function TrashPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Trash" },
+      ]} />
+
       <div>
         <h1 className="text-2xl font-semibold text-foreground tracking-tight">Trash</h1>
         <p className="text-muted-foreground text-sm mt-1">

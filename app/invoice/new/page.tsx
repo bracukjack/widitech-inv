@@ -12,6 +12,7 @@ import {
   getProfile,
 } from "@/lib/invoiceStore";
 import { useInvoiceDraftStore } from "@/lib/invoiceDraftStore";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export default function NewInvoicePage() {
   const router = useRouter();
@@ -40,6 +41,12 @@ export default function NewInvoicePage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Invoices", href: "/invoices" },
+        { label: "New Invoice" },
+      ]} />
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">New Invoice</h1>

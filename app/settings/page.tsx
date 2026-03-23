@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Save, CheckCircle2, Upload, X, User, Trash2, Download, UploadCloud } from "lucide-react";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -127,6 +128,11 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-2xl mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Settings" },
+      ]} />
+
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground text-sm mt-1">

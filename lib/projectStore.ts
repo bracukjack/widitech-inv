@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { Project, ProjectStatus, ProjectCategory, Task } from '@/types';
 import { migrateNestedSoftDelete } from '@/lib/storage';
+import { useActivityStore } from '@/lib/activityStore';
 
 interface ProjectStore {
   projects: Project[];
@@ -41,6 +42,10 @@ interface ProjectStore {
   deleteProject: (id: string) => void; // kept for backward compat, now soft deletes
   getDeleted: () => Project[];
 
+  // PIN
+  togglePin: (id: string) => void;
+  getPinnedProjects: () => Project[];
+
   // AUTO-PROGRESS
   recalculateProgress: (projectId: string) => void;
 }
@@ -54,12 +59,14 @@ export const useProjectStore = create<ProjectStore>()(
         const newProject: Project = {
           ...project,
           id: uuidv4(),
+          isPinned: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           isDeleted: false,
           deletedAt: null,
         };
         set((state) => ({ projects: [...state.projects, newProject] }));
+        useActivityStore.getState().logActivity(newProject.id, 'project_created', `Project "${newProject.name}" was created.`);
         return newProject;
       },
 
@@ -80,16 +87,23 @@ export const useProjectStore = create<ProjectStore>()(
           p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
         ),
       })),
-      updateProgress: (id, progress) => set((state) => ({
-        projects: state.projects.map((p) =>
-          p.id === id ? { ...p, progress, updatedAt: new Date().toISOString() } : p
-        ),
-      })),
-      updateStatus: (id, status) => set((state) => ({
-        projects: state.projects.map((p) =>
-          p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
-        ),
-      })),
+      updateProgress: (id, progress) => {
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, progress, updatedAt: new Date().toISOString() } : p
+          ),
+        }));
+        useActivityStore.getState().logActivity(id, 'progress_updated', `Progress updated to ${progress}%.`, { progress });
+      },
+      updateStatus: (id, status) => {
+        const oldStatus = get().projects.find((p) => p.id === id)?.status;
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, status, updatedAt: new Date().toISOString() } : p
+          ),
+        }));
+        useActivityStore.getState().logActivity(id, 'status_changed', `Status changed from "${oldStatus}" to "${status}".`, { oldStatus, newStatus: status });
+      },
 
       // TASK CRUD
       addTask: (projectId, task) => set((state) => ({
@@ -108,6 +122,8 @@ export const useProjectStore = create<ProjectStore>()(
       })),
 
       toggleTask: (projectId, taskId) => {
+        const project = get().projects.find((p) => p.id === projectId);
+        const task = project?.tasks.find((t) => t.id === taskId);
         set((state) => ({
           projects: state.projects.map((p) =>
             p.id === projectId
@@ -122,6 +138,15 @@ export const useProjectStore = create<ProjectStore>()(
           ),
         }));
         get().recalculateProgress(projectId);
+        if (task) {
+          const newState = !task.completed;
+          useActivityStore.getState().logActivity(
+            projectId,
+            newState ? 'task_completed' : 'task_added',
+            newState ? `Task "${task.title}" completed.` : `Task "${task.title}" marked incomplete.`,
+            { taskId, taskTitle: task.title, completed: newState }
+          );
+        }
       },
 
       updateTask: (projectId, taskId, updates) => set((state) => ({
@@ -232,6 +257,20 @@ export const useProjectStore = create<ProjectStore>()(
       },
 
       getDeleted: () => get().projects.filter((p) => p.isDeleted),
+
+      // PIN
+      togglePin: (id) => {
+        const project = get().projects.find((p) => p.id === id);
+        if (!project) return;
+        const pinnedCount = get().projects.filter(p => p.isPinned && !p.isDeleted).length;
+        if (!project.isPinned && pinnedCount >= 8) return;
+        set((state) => ({
+          projects: state.projects.map((p) =>
+            p.id === id ? { ...p, isPinned: !p.isPinned, updatedAt: new Date().toISOString() } : p
+          ),
+        }));
+      },
+      getPinnedProjects: () => get().projects.filter((p) => !p.isDeleted && p.isPinned),
 
       recalculateProgress: (projectId) => set((state) => ({
         projects: state.projects.map((p) => {

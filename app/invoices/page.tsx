@@ -10,10 +10,13 @@ import {
 import { Invoice } from "@/types/invoice";
 import SavedInvoiceCard from "@/components/SavedInvoiceCard";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
-import { FilePlus, Search } from "lucide-react";
+import { FileText, FilePlus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showDeleted } from "@/lib/toasts";
+import InvoiceListSkeleton from "@/components/skeletons/InvoiceListSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 
 export default function InvoicesPage() {
@@ -22,6 +25,7 @@ export default function InvoicesPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [mounted, setMounted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     ensureSampleData();
@@ -40,7 +44,7 @@ export default function InvoicesPage() {
     setDeleteTarget(null);
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <InvoiceListSkeleton />;
 
   const filtered = invoices.filter((inv) => {
     const matchSearch =
@@ -57,8 +61,8 @@ export default function InvoicesPage() {
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Invoices</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">My Invoices</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
             {invoices.length} invoice{invoices.length !== 1 ? "s" : ""} total
           </p>
         </div>
@@ -70,6 +74,14 @@ export default function InvoicesPage() {
         </Link>
       </div>
 
+      {invoices.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No invoices yet"
+          description="Create your first invoice to start billing clients"
+          action={{ label: "Create Invoice", onClick: () => router.push("/invoice/new") }}
+        />
+      ) : (<>
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -111,6 +123,7 @@ export default function InvoicesPage() {
           ))}
         </div>
       )}
+      </>)}
     </div>
   );
 }

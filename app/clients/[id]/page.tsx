@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { showCreated, showDeleted } from "@/lib/toasts";
+import Breadcrumb from "@/components/layout/Breadcrumb";
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -78,6 +79,12 @@ export default function ClientDetailPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Clients", href: "/clients" },
+        { label: client.name },
+      ]} />
+
       <Link href="/clients" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> Back to Clients
       </Link>

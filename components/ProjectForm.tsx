@@ -70,8 +70,8 @@ export default function ProjectForm({ open, onOpenChange, onSubmit, defaultValue
             {mode === "create" ? "Add a new project to your workspace." : "Update project details."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+          <div className="grid grid-cols-2 gap-5">
             <div className="col-span-2">
               <Label>Project Name *</Label>
               <Input {...register("name")} placeholder="E.g. Company Website Redesign" />
@@ -80,7 +80,7 @@ export default function ProjectForm({ open, onOpenChange, onSubmit, defaultValue
 
             <div>
               <Label>Client *</Label>
-              <select {...register("clientId")} className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm">
+              <select {...register("clientId")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 <option value="">Select client...</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -91,7 +91,7 @@ export default function ProjectForm({ open, onOpenChange, onSubmit, defaultValue
 
             <div>
               <Label>Category</Label>
-              <select {...register("category")} className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm">
+              <select {...register("category")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 {(Object.keys(CATEGORY_CONFIG) as ProjectCategory[]).map((c) => (
                   <option key={c} value={c}>{CATEGORY_CONFIG[c].label}</option>
                 ))}
@@ -100,7 +100,7 @@ export default function ProjectForm({ open, onOpenChange, onSubmit, defaultValue
 
             <div>
               <Label>Status</Label>
-              <select {...register("status")} className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm">
+              <select {...register("status")} className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm">
                 {PROJECT_STATUSES.map((s) => (
                   <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
                 ))}

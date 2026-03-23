@@ -79,7 +79,7 @@ export default function ClientForm({ open, onOpenChange, onSubmit, defaultValues
             {mode === "create" ? "Add a new client to your CRM." : "Update client information."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
           <div>
             <Label>Name *</Label>
             <Input {...register("name")} placeholder="Client name" />
@@ -91,7 +91,7 @@ export default function ClientForm({ open, onOpenChange, onSubmit, defaultValues
             <Input {...register("company")} placeholder="Company name" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-5">
             <div>
               <Label>Email</Label>
               <Input type="email" {...register("email")} placeholder="email@example.com" />
@@ -103,7 +103,7 @@ export default function ClientForm({ open, onOpenChange, onSubmit, defaultValues
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-5">
             <div>
               <Label>Instagram</Label>
               <Input {...register("instagram")} placeholder="@handle" />

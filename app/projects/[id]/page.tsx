@@ -15,6 +15,7 @@ import {
   Circle,
   Clock,
   FileText,
+  Pin,
   Plus,
   Trash2,
   Calendar,
@@ -24,8 +25,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { v4 as uuidv4 } from "uuid";
 import { showCreated, showDeleted } from "@/lib/toasts";
+import Breadcrumb from "@/components/layout/Breadcrumb";
+import ActivityTimeline from "@/components/ActivityTimeline";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type Tab = "overview" | "tasks" | "finance" | "time" | "files";
+type Tab = "overview" | "tasks" | "finance" | "time" | "files" | "activity";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,6 +44,7 @@ export default function ProjectDetailPage() {
   const toggleTask = useProjectStore((s) => s.toggleTask);
   const softDeleteTask = useProjectStore((s) => s.softDeleteTask);
   const restoreTask = useProjectStore((s) => s.restoreTask);
+  const togglePin = useProjectStore((s) => s.togglePin);
   const clients = useClientStore((s) => s.clients);
   const timeLogs = useTimeStore((s) => s.timeLogs);
 
@@ -51,7 +56,26 @@ export default function ProjectDetailPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+        <Skeleton className="h-4 w-48" />
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   const project = projects.find((p) => p.id === id);
   if (!project) {
@@ -100,10 +124,18 @@ export default function ProjectDetailPage() {
     { id: "finance", label: "Finance" },
     { id: "time", label: "Time Logs" },
     { id: "files", label: "Files" },
+    { id: "activity", label: "Activity" },
   ];
 
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb items={[
+        { label: "Home", href: "/" },
+        { label: "Projects", href: "/projects" },
+        { label: project.name },
+      ]} />
+
       {/* Header */}
       <div>
         <Link href="/projects" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -121,10 +153,25 @@ export default function ProjectDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => togglePin(project.id)}
+              title={project.isPinned ? "Unpin project" : "Pin project"}
+              className="shrink-0"
+            >
+              <Pin
+                className={`size-4 transition-colors ${
+                  project.isPinned
+                    ? "fill-primary text-primary"
+                    : "text-muted-foreground"
+                }`}
+              />
+            </Button>
             <select
               value={project.status}
               onChange={(e) => handleStatusChange(e.target.value as ProjectStatus)}
-              className="h-9 rounded-lg border border-input bg-background px-3 text-sm font-medium"
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm font-medium"
               style={{ color: status.text }}
             >
               {PROJECT_STATUSES.map((s) => (
@@ -349,6 +396,13 @@ export default function ProjectDetailPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "activity" && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="font-semibold text-foreground text-sm mb-4">Project Activity</h3>
+          <ActivityTimeline projectId={project.id} />
         </div>
       )}
     </div>

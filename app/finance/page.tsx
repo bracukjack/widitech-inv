@@ -33,6 +33,8 @@ import {
 } from "recharts";
 import ExpenseForm from "@/components/ExpenseForm";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import FinanceSkeleton from "@/components/skeletons/FinanceSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
 import { showCreated, showUpdated, showDeleted } from "@/lib/toasts";
 
 const PIE_COLORS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed', '#ec4899', '#06b6d4', '#f43f5e', '#8b5cf6'];
@@ -58,7 +60,7 @@ export default function FinancePage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <FinanceSkeleton />;
 
   const currentYear = new Date().getFullYear();
 
@@ -143,47 +145,47 @@ export default function FinancePage() {
   return (
     <div className="p-6 lg:p-8 max-w-[1100px] mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Finance</h1>
-        <p className="text-muted-foreground text-sm mt-1">Track your revenue and expenses</p>
+        <h1 className="text-xl font-semibold text-foreground tracking-tight">Finance</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Track your revenue and expenses</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-2">
             <div className="size-9 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <TrendingUp className="size-4 text-green-600" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Revenue YTD</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Revenue YTD</span>
           </div>
-          <p className="text-xl font-bold font-mono text-green-600">{formatIDR(totalRevenueYTD)}</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px] text-green-600">{formatIDR(totalRevenueYTD)}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-2">
             <div className="size-9 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <TrendingDown className="size-4 text-red-600" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Expenses YTD</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Expenses YTD</span>
           </div>
-          <p className="text-xl font-bold font-mono text-red-600">{formatIDR(totalExpensesYTD)}</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px] text-red-600">{formatIDR(totalExpensesYTD)}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-2">
             <div className="size-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <DollarSign className="size-4 text-blue-600" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Net Profit YTD</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Net Profit YTD</span>
           </div>
-          <p className={`text-xl font-bold font-mono ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatIDR(netProfit)}</p>
+          <p className={`text-[26px] font-semibold font-mono tracking-[-0.5px] ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatIDR(netProfit)}</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-[18px] min-h-[88px]">
           <div className="flex items-center gap-3 mb-2">
             <div className="size-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <Receipt className="size-4 text-amber-600" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground">Tax Estimate (10%)</span>
+            <span className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground">Tax Estimate (10%)</span>
           </div>
-          <p className="text-xl font-bold font-mono text-amber-600">{formatIDR(taxEstimate)}</p>
+          <p className="text-[26px] font-semibold font-mono tracking-[-0.5px] text-amber-600">{formatIDR(taxEstimate)}</p>
         </div>
       </div>
 
@@ -242,20 +244,20 @@ export default function FinancePage() {
         </div>
 
         {filteredExpenses.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <Receipt className="size-10 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="font-medium">No expenses recorded</p>
-            <p className="text-sm mt-1">Start tracking your business expenses</p>
-          </div>
+          <EmptyState
+            icon={DollarSign}
+            title="No expenses recorded"
+            description="Start tracking your business expenses"
+          />
         ) : (
           <>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2.5">Date</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2.5">Category</th>
-                  <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-2.5">Description</th>
-                  <th className="text-right text-xs font-semibold text-muted-foreground px-4 py-2.5">Amount</th>
+                  <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Date</th>
+                  <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Category</th>
+                  <th className="text-left text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Description</th>
+                  <th className="text-right text-[11px] uppercase tracking-wider font-medium text-muted-foreground px-4 py-2.5">Amount</th>
                   <th className="px-4 py-2.5 w-16"></th>
                 </tr>
               </thead>
