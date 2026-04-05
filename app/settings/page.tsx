@@ -20,6 +20,7 @@ const profileSchema = z.object({
   address: z.string(),
   bankAccount: z.string(),
   bankName: z.string(),
+  bankAccountName: z.string(),
 });
 
 const MAX_LOGO_SIZE = 2 * 1024 * 1024; // 2MB
@@ -62,6 +63,7 @@ export default function SettingsPage() {
       address: "",
       bankAccount: "",
       bankName: "",
+      bankAccountName: "",
     },
   });
 
@@ -281,6 +283,14 @@ export default function SettingsPage() {
                 id="bankAccount"
                 {...register("bankAccount")}
                 placeholder="1234567890"
+              />
+            </div>
+            <div>
+              <Label htmlFor="bankAccountName">Account Holder Name</Label>
+              <Input
+                id="bankAccountName"
+                {...register("bankAccountName")}
+                placeholder="Account holder name"
               />
             </div>
           </div>

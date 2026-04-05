@@ -103,8 +103,8 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
                 src={logo}
                 alt="Logo"
                 style={{
-                  width: "48px",
-                  height: "48px",
+                  width: "70px",
+                  height: "70px",
                   borderRadius: "8px",
                   objectFit: "cover",
                   border: isFullHeader ? "1px solid rgba(255,255,255,0.2)" : `1px solid ${theme.borderColor}`,
@@ -113,8 +113,8 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
             ) : invoice.freelancerName ? (
               <div
                 style={{
-                  width: "48px",
-                  height: "48px",
+                  width: "36px",
+                  height: "36px",
                   borderRadius: "8px",
                   display: "flex",
                   alignItems: "center",
@@ -390,9 +390,9 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
                 <span style={{ fontWeight: 500 }}>Account:</span> {invoice.freelancerBankAccount}
               </p>
             )}
-            {invoice.freelancerName && (
+            {(invoice.freelancerBankAccountName || invoice.freelancerName) && (
               <p style={{ fontSize: "14px", color: theme.bodyText, margin: "2px 0" }}>
-                <span style={{ fontWeight: 500 }}>Account Holder:</span> {invoice.freelancerName}
+                <span style={{ fontWeight: 500 }}>Account Holder:</span> {invoice.freelancerBankAccountName || invoice.freelancerName}
               </p>
             )}
           </div>

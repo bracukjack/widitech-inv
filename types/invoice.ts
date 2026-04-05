@@ -24,6 +24,7 @@ export interface Invoice {
   freelancerAddress: string;
   freelancerBankAccount: string;
   freelancerBankName: string;
+  freelancerBankAccountName: string;
 
   // Client info
   clientName: string;
@@ -65,6 +66,7 @@ export interface FreelancerProfile {
   address: string;
   bankAccount: string;
   bankName: string;
+  bankAccountName: string;
   logo: string;
 }
 

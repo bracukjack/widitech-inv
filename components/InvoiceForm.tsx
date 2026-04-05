@@ -70,6 +70,7 @@ const invoiceSchema = z.object({
   freelancerAddress: z.string(),
   freelancerBankAccount: z.string(),
   freelancerBankName: z.string(),
+  freelancerBankAccountName: z.string(),
   clientName: z.string().min(1, "Required"),
   clientCompany: z.string(),
   clientEmail: z.string(),
@@ -495,8 +496,12 @@ export default function InvoiceForm({
               <Input id="freelancerBankName" {...register("freelancerBankName")} placeholder="Bank name" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="freelancerBankAccount">Bank Account</Label>
+              <Label htmlFor="freelancerBankAccount">Bank Account Number</Label>
               <Input id="freelancerBankAccount" {...register("freelancerBankAccount")} placeholder="Account number" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="freelancerBankAccountName">Account Holder Name</Label>
+              <Input id="freelancerBankAccountName" {...register("freelancerBankAccountName")} placeholder="Account holder name" />
             </div>
           </div>
           </div>

@@ -141,6 +141,7 @@ export default function OnboardingPage() {
       address,
       bankAccount,
       bankName,
+      bankAccountName,
       logo: '',
     });
 

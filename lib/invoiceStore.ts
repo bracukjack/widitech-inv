@@ -98,14 +98,14 @@ export function generateInvoiceNumber(): string {
 
 export function getProfile(): FreelancerProfile {
   if (typeof window === "undefined") {
-    return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", logo: "" };
+    return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", bankAccountName: "", logo: "" };
   }
   const data = localStorage.getItem(PROFILE_KEY);
-  if (!data) return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", logo: "" };
+  if (!data) return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", bankAccountName: "", logo: "" };
   try {
     return JSON.parse(data) as FreelancerProfile;
   } catch {
-    return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", logo: "" };
+    return { name: "", email: "", phone: "", address: "", bankAccount: "", bankName: "", bankAccountName: "", logo: "" };
   }
 }
 
@@ -130,6 +130,7 @@ export function createEmptyInvoice(profile?: FreelancerProfile): Invoice {
     freelancerAddress: p.address,
     freelancerBankAccount: p.bankAccount,
     freelancerBankName: p.bankName,
+    freelancerBankAccountName: p.bankAccountName || "",
     clientName: "",
     clientCompany: "",
     clientEmail: "",
@@ -167,6 +168,7 @@ export function getSampleInvoice(): Invoice {
     freelancerAddress: "Jl. Sudirman No. 45, Jakarta Selatan, 12190",
     freelancerBankAccount: "1234567890",
     freelancerBankName: "Bank Central Asia (BCA)",
+    freelancerBankAccountName: "Andi Pratama",
     clientName: "Budi Santoso",
     clientCompany: "PT Nusantara Digital",
     clientEmail: "budi@nusantaradigital.co.id",
