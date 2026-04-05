@@ -353,6 +353,92 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
           </div>
         </div>
 
+        {/* Payment Schedule */}
+        {invoice.paymentScheduleType === "scheduled" && invoice.paymentStages && invoice.paymentStages.length > 0 && (
+          <div
+            style={{
+              background: theme.badgeBg,
+              borderRadius: "8px",
+              padding: "16px",
+              marginTop: "24px",
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.05em",
+                color: theme.mutedText,
+                marginBottom: "12px",
+              }}
+            >
+              Payment Schedule
+            </h4>
+            <table style={{ width: "100%", fontSize: "14px", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", paddingBottom: "6px", fontWeight: 600, color: theme.mutedText, fontSize: "12px" }}>Stage</th>
+                  <th style={{ textAlign: "right", paddingBottom: "6px", fontWeight: 600, color: theme.mutedText, fontSize: "12px" }}>Amount</th>
+                  <th style={{ textAlign: "right", paddingBottom: "6px", fontWeight: 600, color: theme.mutedText, fontSize: "12px" }}>Due Date</th>
+                  <th style={{ textAlign: "right", paddingBottom: "6px", fontWeight: 600, color: theme.mutedText, fontSize: "12px" }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoice.paymentStages.map((stage, i) => {
+                  const amount = stage.type === "percentage"
+                    ? total * (stage.value / 100)
+                    : stage.value;
+                  return (
+                    <tr key={stage.id || i} style={{ borderTop: `1px solid ${theme.borderColor}` }}>
+                      <td style={{ padding: "6px 0", color: theme.bodyText, fontWeight: 500 }}>
+                        {stage.name || `Stage ${i + 1}`}
+                      </td>
+                      <td style={{ padding: "6px 0", textAlign: "right", color: stage.isPaid ? theme.mutedText : theme.bodyText, textDecoration: stage.isPaid ? "line-through" : "none" }}>
+                        {formatCurrency(amount, invoice.currency)}
+                      </td>
+                      <td style={{ padding: "6px 0", textAlign: "right", color: theme.mutedText }}>
+                        {stage.dueDate ? formatDate(stage.dueDate) : "-"}
+                      </td>
+                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+                        <span style={{
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: "999px",
+                          background: stage.isPaid ? "#dcfce7" : "#fef9c3",
+                          color: stage.isPaid ? "#16a34a" : "#a16207",
+                        }}>
+                          {stage.isPaid ? "Paid" : "Due"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {(() => {
+                const paidAmount = invoice.paymentStages.reduce((sum, s) => {
+                  if (!s.isPaid) return sum;
+                  return sum + (s.type === "percentage" ? total * (s.value / 100) : s.value);
+                }, 0);
+                const balance = total - paidAmount;
+                return paidAmount > 0 ? (
+                  <tfoot>
+                    <tr>
+                      <td colSpan={2} style={{ paddingTop: "8px", borderTop: `2px solid ${theme.accentColor}`, fontWeight: 700, color: theme.accentColor }}>
+                        Balance Due
+                      </td>
+                      <td colSpan={2} style={{ paddingTop: "8px", borderTop: `2px solid ${theme.accentColor}`, textAlign: "right", fontWeight: 700, color: theme.accentColor }}>
+                        {formatCurrency(balance, invoice.currency)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                ) : null;
+              })()}
+            </table>
+          </div>
+        )}
+
         {/* Bank Details */}
         {(invoice.freelancerBankName || invoice.freelancerBankAccount) && (
           <div

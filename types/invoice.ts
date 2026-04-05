@@ -9,6 +9,15 @@ export interface LineItem {
   unitPrice: number;
 }
 
+export interface PaymentStage {
+  id: string;
+  name: string;
+  type: "percentage" | "fixed";
+  value: number;
+  dueDate: string;
+  isPaid: boolean;
+}
+
 export interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -42,6 +51,10 @@ export interface Invoice {
   discountValue: number;
   taxType: "percentage" | "fixed";
   taxRate: number;
+
+  // Payment schedule
+  paymentScheduleType: "full" | "scheduled";
+  paymentStages: PaymentStage[];
 
   // Additional
   notes: string;

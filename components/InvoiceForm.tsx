@@ -40,6 +40,8 @@ import {
   Sparkles,
   GripVertical,
   Settings,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { Invoice, Currency, LINE_ITEM_TEMPLATES } from "@/types/invoice";
 import { useInvoiceDraftStore } from "@/lib/invoiceDraftStore";
@@ -55,6 +57,15 @@ const lineItemSchema = z.object({
   description: z.string().min(1, "Required"),
   quantity: z.number().min(1),
   unitPrice: z.number().min(0),
+});
+
+const paymentStageSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["percentage", "fixed"]),
+  value: z.number().min(0),
+  dueDate: z.string(),
+  isPaid: z.boolean(),
 });
 
 const invoiceSchema = z.object({
@@ -82,6 +93,8 @@ const invoiceSchema = z.object({
   discountValue: z.number().min(0),
   taxType: z.enum(["percentage", "fixed"]),
   taxRate: z.number().min(0),
+  paymentScheduleType: z.enum(["full", "scheduled"]),
+  paymentStages: z.array(paymentStageSchema),
   notes: z.string(),
   paymentMethod: z.enum(["Bank Transfer", "PayPal", "Wise", "Other"]),
   theme: z.string(),
@@ -219,6 +232,8 @@ export default function InvoiceForm({
     clientCountry: invoice.clientCountry || "",
     taxType: invoice.taxType || "percentage",
     paymentMethod: invoice.paymentMethod || "Bank Transfer",
+    paymentScheduleType: invoice.paymentScheduleType || "full",
+    paymentStages: invoice.paymentStages || [],
   };
 
   const {
@@ -237,6 +252,16 @@ export default function InvoiceForm({
   const { fields, append, remove, replace } = useFieldArray({
     control,
     name: "lineItems",
+  });
+
+  const {
+    fields: stageFields,
+    append: appendStage,
+    remove: removeStage,
+    replace: replaceStages,
+  } = useFieldArray({
+    control,
+    name: "paymentStages",
   });
 
   // Sync form → Zustand store on every change
@@ -262,6 +287,8 @@ export default function InvoiceForm({
   const freelancerName = watch("freelancerName");
   const freelancerEmail = watch("freelancerEmail");
   const clientName = watch("clientName");
+  const paymentScheduleType = watch("paymentScheduleType");
+  const watchedStages = watch("paymentStages");
 
   // Tab validation state
   const tabErrors = useMemo(() => {
@@ -697,6 +724,140 @@ export default function InvoiceForm({
 
           <Separator />
 
+          {/* Payment Schedule */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Payment Schedule</Label>
+              <div className="flex rounded-lg overflow-hidden border border-border text-xs">
+                <button
+                  type="button"
+                  onClick={() => setValue("paymentScheduleType", "full")}
+                  className={`px-3 py-1.5 transition-colors ${paymentScheduleType === "full" ? "bg-primary text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  Full Payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue("paymentScheduleType", "scheduled")}
+                  className={`px-3 py-1.5 border-l border-border transition-colors ${paymentScheduleType === "scheduled" ? "bg-primary text-white" : "bg-background text-muted-foreground hover:bg-muted"}`}
+                >
+                  Payment Schedule
+                </button>
+              </div>
+            </div>
+
+            {paymentScheduleType === "scheduled" && (
+              <div className="space-y-3">
+                {/* Quick presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1 mr-1">
+                    <Sparkles className="size-3" /> Presets:
+                  </span>
+                  <Button type="button" variant="outline" size="xs"
+                    onClick={() => replaceStages([
+                      { id: uuidv4(), name: "Down Payment", type: "percentage", value: 50, dueDate: getValues("invoiceDate"), isPaid: false },
+                      { id: uuidv4(), name: "Final Payment", type: "percentage", value: 50, dueDate: getValues("dueDate"), isPaid: false },
+                    ])}>50% / 50%</Button>
+                  <Button type="button" variant="outline" size="xs"
+                    onClick={() => replaceStages([
+                      { id: uuidv4(), name: "Down Payment", type: "percentage", value: 30, dueDate: getValues("invoiceDate"), isPaid: false },
+                      { id: uuidv4(), name: "Final Payment", type: "percentage", value: 70, dueDate: getValues("dueDate"), isPaid: false },
+                    ])}>30% / 70%</Button>
+                  <Button type="button" variant="outline" size="xs"
+                    onClick={() => replaceStages([
+                      { id: uuidv4(), name: "Down Payment", type: "percentage", value: 33, dueDate: getValues("invoiceDate"), isPaid: false },
+                      { id: uuidv4(), name: "Midpoint", type: "percentage", value: 33, dueDate: "", isPaid: false },
+                      { id: uuidv4(), name: "Final Payment", type: "percentage", value: 34, dueDate: getValues("dueDate"), isPaid: false },
+                    ])}>3 Milestones</Button>
+                </div>
+
+                {/* Stage rows */}
+                <div className="space-y-2">
+                  {stageFields.map((field, index) => (
+                    <div key={field.id} className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          {...register(`paymentStages.${index}.name`)}
+                          placeholder="Stage name (e.g. Down Payment)"
+                          className="flex-1 text-sm"
+                        />
+                        <Controller
+                          control={control}
+                          name={`paymentStages.${index}.isPaid`}
+                          render={({ field: f }) => (
+                            <button
+                              type="button"
+                              onClick={() => f.onChange(!f.value)}
+                              title={f.value ? "Mark as unpaid" : "Mark as paid"}
+                              className={`shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${f.value ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+                            >
+                              {f.value ? <CheckCircle2 className="size-3.5" /> : <Circle className="size-3.5" />}
+                              {f.value ? "Paid" : "Unpaid"}
+                            </button>
+                          )}
+                        />
+                        {stageFields.length > 1 && (
+                          <Button type="button" variant="ghost" size="icon-xs" onClick={() => removeStage(index)} className="shrink-0 text-muted-foreground hover:text-destructive">
+                            <Trash2 className="size-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Controller
+                          control={control}
+                          name={`paymentStages.${index}.type`}
+                          render={({ field: f }) => (
+                            <Select value={f.value} onValueChange={f.onChange}>
+                              <SelectTrigger className="w-24 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="percentage">% of total</SelectItem>
+                                <SelectItem value="fixed">Fixed amount</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        <Input
+                          type="number"
+                          {...register(`paymentStages.${index}.value`, { valueAsNumber: true })}
+                          min={0}
+                          placeholder={watchedStages?.[index]?.type === "percentage" ? "50" : "0"}
+                          className="w-24 text-sm"
+                        />
+                        <Input
+                          type="date"
+                          {...register(`paymentStages.${index}.dueDate`)}
+                          className="flex-1 text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button type="button" variant="outline" size="sm"
+                  onClick={() => appendStage({ id: uuidv4(), name: "", type: "percentage", value: 0, dueDate: "", isPaid: false })}>
+                  <Plus className="size-4 mr-1" /> Add Stage
+                </Button>
+
+                {/* Allocation hint (% mode) */}
+                {watchedStages?.every((s) => s?.type === "percentage") && (
+                  (() => {
+                    const total = watchedStages.reduce((s, st) => s + (st?.value || 0), 0);
+                    const ok = Math.abs(total - 100) < 0.01;
+                    return (
+                      <p className={`text-xs ${ok ? "text-green-600" : "text-amber-600"}`}>
+                        {total.toFixed(0)}% allocated{ok ? " ✓" : " — should equal 100%"}
+                      </p>
+                    );
+                  })()
+                )}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Summary */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
@@ -724,6 +885,41 @@ export default function InvoiceForm({
               <span>Total</span>
               <span className="text-primary">{formatCurrency(grandTotal, currency || "IDR")}</span>
             </div>
+            {paymentScheduleType === "scheduled" && watchedStages && watchedStages.length > 0 && (
+              <>
+                <Separator />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payment Schedule</p>
+                {watchedStages.map((stage, i) => {
+                  const amt = stage?.type === "percentage"
+                    ? grandTotal * ((stage?.value || 0) / 100)
+                    : (stage?.value || 0);
+                  return (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <span className={`size-1.5 rounded-full inline-block ${stage?.isPaid ? "bg-green-500" : "bg-amber-400"}`} />
+                        {stage?.name || `Stage ${i + 1}`}
+                      </span>
+                      <span className={stage?.isPaid ? "text-green-600 line-through" : "font-medium"}>
+                        {formatCurrency(amt, currency || "IDR")}
+                      </span>
+                    </div>
+                  );
+                })}
+                {(() => {
+                  const paid = watchedStages.reduce((sum, s) => {
+                    if (!s?.isPaid) return sum;
+                    return sum + (s.type === "percentage" ? grandTotal * (s.value / 100) : s.value);
+                  }, 0);
+                  const balance = grandTotal - paid;
+                  return paid > 0 ? (
+                    <div className="flex justify-between text-sm font-semibold border-t border-border pt-2 mt-1">
+                      <span>Balance Due</span>
+                      <span className="text-primary">{formatCurrency(balance, currency || "IDR")}</span>
+                    </div>
+                  ) : null;
+                })()}
+              </>
+            )}
           </div>
           </div>
         )}
