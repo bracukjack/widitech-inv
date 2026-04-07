@@ -65,6 +65,7 @@ export interface Project {
   hourlyRate?: number;
   estimatedHours?: number;
   isPinned: boolean;
+  timelineId: string | null;
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
@@ -240,7 +241,13 @@ export type ActivityType =
   | 'invoice_paid'
   | 'time_logged'
   | 'note_added'
-  | 'file_attached';
+  | 'file_attached'
+  | 'phase_created'
+  | 'phase_status_changed'
+  | 'phase_completed'
+  | 'phase_deleted'
+  | 'milestone_added'
+  | 'milestone_completed';
 
 export interface ActivityLog {
   id: string;
@@ -249,4 +256,61 @@ export interface ActivityLog {
   description: string;
   meta?: Record<string, any>;
   createdAt: string;
+}
+
+// ====== TIMELINE TYPES ======
+
+export type PhaseStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'on_hold'
+  | 'cancelled';
+
+export interface Milestone {
+  id: string;
+  phaseId: string | null;
+  projectId: string;
+  title: string;
+  date: string;
+  description?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  color?: string;
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+}
+
+export interface TimelinePhase {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  status: PhaseStatus;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  progressMode: 'auto' | 'manual';
+  color: string;
+  sortOrder: number;
+  taskIds: string[];
+  milestones: Milestone[];
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Timeline {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string;
+  phases: TimelinePhase[];
+  milestones: Milestone[];
+  isDeleted: boolean;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

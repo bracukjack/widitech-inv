@@ -7,7 +7,7 @@ import { useTimeStore } from './timeStore';
 
 const SEED_KEY = 'business-os-seeded';
 
-const sd = { isDeleted: false as const, deletedAt: null as string | null, isPinned: false };
+const sd = { isDeleted: false as const, deletedAt: null as string | null, isPinned: false, timelineId: null as string | null };
 
 function note(id: string, date: string, content: string, createdAt: string): MeetingNote {
   return { id, date, content, createdAt, ...sd };

@@ -10,6 +10,8 @@ import { useProjectStore } from "@/lib/projectStore";
 import { useClientStore } from "@/lib/clientStore";
 import { useFinanceStore } from "@/lib/financeStore";
 import { useTimeStore } from "@/lib/timeStore";
+import { useTimelineStore } from "@/lib/timelineStore";
+import MiniPhaseStrip from "@/components/timeline/MiniPhaseStrip";
 import { seedAllData } from "@/lib/seedData";
 import { formatIDR } from "@/lib/constants";
 import { STATUS_CONFIG } from "@/lib/constants";
@@ -35,9 +37,10 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  const projects = useProjectStore((s) => s.projects);
-  const clients = useClientStore((s) => s.clients);
-  const expenses = useFinanceStore((s) => s.expenses);
+  const projects   = useProjectStore((s) => s.projects);
+  const clients    = useClientStore((s) => s.clients);
+  const expenses   = useFinanceStore((s) => s.expenses);
+  const timelines  = useTimelineStore((s) => s.timelines);
 
   useEffect(() => {
     ensureSampleData();
@@ -46,6 +49,7 @@ export default function DashboardPage() {
     useClientStore.persist.rehydrate();
     useFinanceStore.persist.rehydrate();
     useTimeStore.persist.rehydrate();
+    useTimelineStore.persist.rehydrate();
     setInvoices(getInvoices());
     setMounted(true);
   }, []);
@@ -219,6 +223,16 @@ export default function DashboardPage() {
                     </div>
                     <span className="text-xs text-muted-foreground font-mono">{project.progress}%</span>
                   </div>
+                  {(() => {
+                    const tl = timelines.find((t) => t.projectId === project.id && !t.isDeleted);
+                    return tl && tl.phases.some((p) => !p.isDeleted) ? (
+                      <MiniPhaseStrip
+                        timeline={tl}
+                        projectStartDate={project.startDate}
+                        projectDeadline={project.deadline}
+                      />
+                    ) : null;
+                  })()}
                   <p className={`text-xs mt-2 ${daysLeft < 7 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                     {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}
                   </p>
@@ -275,6 +289,17 @@ export default function DashboardPage() {
                         </div>
                         <span className="text-xs text-muted-foreground font-mono">{project.progress}%</span>
                       </div>
+                      {/* Mini phase strip */}
+                      {(() => {
+                        const tl = timelines.find((t) => t.projectId === project.id && !t.isDeleted);
+                        return tl && tl.phases.some((p) => !p.isDeleted) ? (
+                          <MiniPhaseStrip
+                            timeline={tl}
+                            projectStartDate={project.startDate}
+                            projectDeadline={project.deadline}
+                          />
+                        ) : null;
+                      })()}
                     </div>
                     <div className="ml-4 text-right shrink-0">
                       <p className="text-xs font-mono text-muted-foreground">{formatIDR(project.contractValue)}</p>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useProjectStore } from "@/lib/projectStore";
 import { useClientStore } from "@/lib/clientStore";
 import { useTimeStore } from "@/lib/timeStore";
+import { useTimelineStore } from "@/lib/timelineStore";
 import { seedAllData } from "@/lib/seedData";
 import { STATUS_CONFIG, CATEGORY_CONFIG, PROJECT_STATUSES, formatIDR } from "@/lib/constants";
 import { ProjectStatus, Task } from "@/types";
@@ -27,9 +28,10 @@ import { v4 as uuidv4 } from "uuid";
 import { showCreated, showDeleted } from "@/lib/toasts";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import ActivityTimeline from "@/components/ActivityTimeline";
+import TimelineTab from "@/components/timeline/TimelineTab";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Tab = "overview" | "tasks" | "finance" | "time" | "files" | "activity";
+type Tab = "overview" | "tasks" | "timeline" | "finance" | "time" | "files" | "activity";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +55,7 @@ export default function ProjectDetailPage() {
     useProjectStore.persist.rehydrate();
     useClientStore.persist.rehydrate();
     useTimeStore.persist.rehydrate();
+    useTimelineStore.persist.rehydrate();
     setMounted(true);
   }, []);
 
@@ -121,6 +124,7 @@ export default function ProjectDetailPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "tasks", label: `Tasks (${totalTasks})` },
+    { id: "timeline", label: "Timeline" },
     { id: "finance", label: "Finance" },
     { id: "time", label: "Time Logs" },
     { id: "files", label: "Files" },
@@ -404,6 +408,10 @@ export default function ProjectDetailPage() {
           <h3 className="font-semibold text-foreground text-sm mb-4">Project Activity</h3>
           <ActivityTimeline projectId={project.id} />
         </div>
+      )}
+
+      {activeTab === "timeline" && (
+        <TimelineTab project={project} />
       )}
     </div>
   );

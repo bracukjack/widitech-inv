@@ -6,18 +6,23 @@ export interface ShortcutDef {
 }
 
 export const SHORTCUTS: Record<string, ShortcutDef> = {
-  SEARCH:          { key: 'k',  meta: true,  description: 'Open search' },
-  NEW_PROJECT:     { key: 'p',  meta: true, shift: true, description: 'New project' },
-  NEW_CLIENT:      { key: 'c',  meta: true, shift: true, description: 'New client' },
-  NEW_INVOICE:     { key: 'i',  meta: true, shift: true, description: 'New invoice' },
-  GO_DASHBOARD:    { key: '1',  meta: true,  description: 'Go to Dashboard' },
-  GO_PROJECTS:     { key: '2',  meta: true,  description: 'Go to Projects' },
-  GO_CLIENTS:      { key: '3',  meta: true,  description: 'Go to Clients' },
-  GO_FINANCE:      { key: '4',  meta: true,  description: 'Go to Finance' },
-  GO_INVOICES:     { key: '5',  meta: true,  description: 'Go to Invoices' },
-  GO_TIME:         { key: '6',  meta: true,  description: 'Go to Time Tracker' },
-  TOGGLE_VIEW:     { key: '\\', meta: true,  description: 'Toggle list/kanban' },
-  SHOW_SHORTCUTS:  { key: '?',                description: 'Show keyboard shortcuts' },
+  SEARCH:                { key: 'k',  meta: true,  description: 'Open search' },
+  NEW_PROJECT:           { key: 'p',  meta: true, shift: true, description: 'New project' },
+  NEW_CLIENT:            { key: 'c',  meta: true, shift: true, description: 'New client' },
+  NEW_INVOICE:           { key: 'i',  meta: true, shift: true, description: 'New invoice' },
+  GO_DASHBOARD:          { key: '1',  meta: true,  description: 'Go to Dashboard' },
+  GO_PROJECTS:           { key: '2',  meta: true,  description: 'Go to Projects' },
+  GO_CLIENTS:            { key: '3',  meta: true,  description: 'Go to Clients' },
+  GO_FINANCE:            { key: '4',  meta: true,  description: 'Go to Finance' },
+  GO_INVOICES:           { key: '5',  meta: true,  description: 'Go to Invoices' },
+  GO_TIME:               { key: '6',  meta: true,  description: 'Go to Time Tracker' },
+  TOGGLE_VIEW:           { key: '\\', meta: true,  description: 'Toggle list/kanban' },
+  SHOW_SHORTCUTS:        { key: '?',               description: 'Show keyboard shortcuts' },
+  // Timeline tab (active inside project detail)
+  TIMELINE_ADD_PHASE:    { key: 'p', meta: true, shift: true, description: 'Add new phase (Timeline tab)' },
+  TIMELINE_ADD_MILESTONE:{ key: 'm', meta: true, shift: true, description: 'Add milestone (Timeline tab)' },
+  TIMELINE_TOGGLE_VIEW:  { key: '\\', meta: true,             description: 'Toggle Gantt / List view (Timeline tab)' },
+  TIMELINE_SCROLL_TODAY: { key: 't', meta: true,              description: 'Scroll to today (Timeline tab)' },
 };
 
 export function formatShortcut(def: ShortcutDef): string {

@@ -90,6 +90,7 @@ export default function ProjectsPage() {
       attachments: [],
       deliveredDate: undefined,
       isPinned: false,
+      timelineId: null,
     });
     showCreated("Project");
   };

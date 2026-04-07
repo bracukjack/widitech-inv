@@ -86,3 +86,37 @@ export const taskSchema = z.object({
 });
 
 export type TaskFormData = z.infer<typeof taskSchema>;
+
+// ====== TIMELINE SCHEMAS ======
+
+export const phaseSchema = z.object({
+  name: z.string().min(1, 'Phase name is required').max(80),
+  description: z.string().max(200).optional(),
+  status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']),
+  startDate: z.string().min(1, 'Start date is required'),
+  endDate: z.string().min(1, 'End date is required'),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid color'),
+  progressMode: z.enum(['auto', 'manual']),
+  progress: z.number().min(0).max(100),
+}).refine((d) => d.endDate >= d.startDate, {
+  message: 'End date must be on or after start date',
+  path: ['endDate'],
+});
+
+export const milestoneSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(80),
+  date: z.string().min(1, 'Date is required'),
+  description: z.string().max(300).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  phaseId: z.string().nullable(),
+});
+
+export const timelineSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100),
+  description: z.string().max(300).optional(),
+});
+
+export type PhaseFormData     = z.infer<typeof phaseSchema>;
+export type MilestoneFormData = z.infer<typeof milestoneSchema>;
+export type TimelineFormData  = z.infer<typeof timelineSchema>;
+

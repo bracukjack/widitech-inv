@@ -60,6 +60,7 @@ export const useProjectStore = create<ProjectStore>()(
           ...project,
           id: uuidv4(),
           isPinned: false,
+          timelineId: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           isDeleted: false,
@@ -169,6 +170,24 @@ export const useProjectStore = create<ProjectStore>()(
       },
 
       softDeleteTask: (projectId, taskId) => {
+        // Unlink from any timeline phase
+        try {
+          const { useTimelineStore } = require('@/lib/timelineStore') as { useTimelineStore: typeof import('@/lib/timelineStore').useTimelineStore };
+          const tlState = useTimelineStore.getState();
+          const tl = tlState.timelines.find((t) => t.projectId === projectId && !t.isDeleted);
+          if (tl) {
+            const phase = tlState.getPhaseForTask(tl.id, taskId);
+            if (phase) {
+              tlState.unlinkTaskFromPhase(tl.id, phase.id, taskId);
+              const project = get().projects.find((p) => p.id === projectId);
+              if (project) {
+                const tasks = project.tasks.filter((t) => !t.isDeleted && t.id !== taskId);
+                tlState.recalculatePhaseProgress(tl.id, phase.id, tasks);
+              }
+            }
+          }
+        } catch (_) { /* silently ignore — avoids circular dep issues during SSR */ }
+
         set((state) => ({
           projects: state.projects.map((p) =>
             p.id === projectId

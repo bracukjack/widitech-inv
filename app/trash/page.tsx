@@ -5,6 +5,7 @@ import { useProjectStore } from "@/lib/projectStore";
 import { useClientStore } from "@/lib/clientStore";
 import { useFinanceStore } from "@/lib/financeStore";
 import { useTimeStore } from "@/lib/timeStore";
+import { useTimelineStore } from "@/lib/timelineStore";
 import {
   getDeletedInvoices,
   restoreInvoice,
@@ -23,13 +24,15 @@ import {
   DollarSign,
   Clock,
   FileText,
+  CalendarRange,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import { showRestored, showPermanentlyDeleted } from "@/lib/toasts";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 
-type TabId = "projects" | "clients" | "expenses" | "timelogs" | "invoices";
+type TabId = "projects" | "clients" | "expenses" | "timelogs" | "invoices" | "phases" | "milestones";
 
 export default function TrashPage() {
   const [mounted, setMounted] = useState(false);
@@ -57,12 +60,20 @@ export default function TrashPage() {
   const restoreTimeLog = useTimeStore((s) => s.restore);
   const permanentDeleteTimeLog = useTimeStore((s) => s.permanentDelete);
 
+  // Timeline store
+  const { phases: deletedPhases, milestones: deletedMilestones } = useTimelineStore((s) => s.getDeletedItems());
+  const restorePhase = useTimelineStore((s) => s.restorePhase);
+  const permanentDeletePhase = useTimelineStore((s) => s.permanentDeletePhase);
+  const restoreMilestone = useTimelineStore((s) => s.restoreMilestone);
+  const permanentDeleteMilestone = useTimelineStore((s) => s.permanentDeleteMilestone);
+
   useEffect(() => {
     seedAllData();
     useProjectStore.persist.rehydrate();
     useClientStore.persist.rehydrate();
     useFinanceStore.persist.rehydrate();
     useTimeStore.persist.rehydrate();
+    useTimelineStore.persist.rehydrate();
     setInvoices(getDeletedInvoices());
     setMounted(true);
   }, []);
@@ -72,11 +83,13 @@ export default function TrashPage() {
   if (!mounted) return null;
 
   const tabs: { id: TabId; label: string; icon: typeof Trash2; count: number }[] = [
-    { id: "projects", label: "Projects", icon: FolderKanban, count: deletedProjects.length },
-    { id: "clients", label: "Clients", icon: Users, count: deletedClients.length },
-    { id: "expenses", label: "Expenses", icon: DollarSign, count: deletedExpenses.length },
-    { id: "timelogs", label: "Time Logs", icon: Clock, count: deletedTimeLogs.length },
-    { id: "invoices", label: "Invoices", icon: FileText, count: invoices.length },
+    { id: "projects",   label: "Projects",   icon: FolderKanban,  count: deletedProjects.length },
+    { id: "clients",    label: "Clients",    icon: Users,         count: deletedClients.length },
+    { id: "expenses",   label: "Expenses",   icon: DollarSign,    count: deletedExpenses.length },
+    { id: "timelogs",   label: "Time Logs",  icon: Clock,         count: deletedTimeLogs.length },
+    { id: "invoices",   label: "Invoices",   icon: FileText,      count: invoices.length },
+    { id: "phases",     label: "Phases",     icon: CalendarRange, count: deletedPhases.length },
+    { id: "milestones", label: "Milestones", icon: Flag,          count: deletedMilestones.length },
   ];
 
   const totalDeleted = tabs.reduce((sum, t) => sum + t.count, 0);
@@ -88,6 +101,8 @@ export default function TrashPage() {
       case "expenses": restoreExpense(id); break;
       case "timelogs": restoreTimeLog(id); break;
       case "invoices": restoreInvoice(id); refreshInvoices(); break;
+      case "phases": restorePhase(id); break;
+      case "milestones": restoreMilestone(id); break;
     }
     showRestored(label);
   };
@@ -101,6 +116,8 @@ export default function TrashPage() {
       case "expenses": permanentDeleteExpense(id); break;
       case "timelogs": permanentDeleteTimeLog(id); break;
       case "invoices": permanentDeleteInvoice(id); refreshInvoices(); break;
+      case "phases": permanentDeletePhase(id); break;
+      case "milestones": permanentDeleteMilestone(id); break;
     }
     showPermanentlyDeleted(label);
     setPermanentTarget(null);
@@ -235,6 +252,44 @@ export default function TrashPage() {
                   subtitle={`${inv.clientName || "No client"} · Deleted ${formatDeletedDate(inv.deletedAt)}`}
                   onRestore={() => handleRestore("invoices", inv.id, "Invoice")}
                   onDelete={() => setPermanentTarget({ type: "invoices", id: inv.id, label: "Invoice" })}
+                />
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Phases */}
+        {activeTab === "phases" && (
+          deletedPhases.length === 0 ? (
+            <EmptyTrash label="phases" />
+          ) : (
+            <div className="divide-y divide-border">
+              {deletedPhases.map((ph) => (
+                <TrashRow
+                  key={ph.id}
+                  title={ph.name}
+                  subtitle={`${ph.startDate} → ${ph.endDate} · Deleted ${formatDeletedDate(ph.deletedAt)}`}
+                  onRestore={() => handleRestore("phases", ph.id, "Phase")}
+                  onDelete={() => setPermanentTarget({ type: "phases", id: ph.id, label: "Phase" })}
+                />
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Milestones */}
+        {activeTab === "milestones" && (
+          deletedMilestones.length === 0 ? (
+            <EmptyTrash label="milestones" />
+          ) : (
+            <div className="divide-y divide-border">
+              {deletedMilestones.map((ms) => (
+                <TrashRow
+                  key={ms.id}
+                  title={ms.title}
+                  subtitle={`Due ${ms.date} · Deleted ${formatDeletedDate(ms.deletedAt)}`}
+                  onRestore={() => handleRestore("milestones", ms.id, "Milestone")}
+                  onDelete={() => setPermanentTarget({ type: "milestones", id: ms.id, label: "Milestone" })}
                 />
               ))}
             </div>

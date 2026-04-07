@@ -1,4 +1,4 @@
-import { ProjectStatus, ProjectCategory, ExpenseCategory } from '@/types';
+import { ProjectStatus, ProjectCategory, ExpenseCategory, PhaseStatus } from '@/types';
 
 export const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; bg: string; text: string }> = {
   lead:        { label: 'Lead',        color: 'purple', bg: '#f5f3ff', text: '#6d28d9' },
@@ -39,3 +39,25 @@ export const formatIDR = (amount: number) =>
 
 export const formatUSD = (amount: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+
+// ====== TIMELINE CONSTANTS ======
+
+export const PHASE_STATUS_CONFIG: Record<PhaseStatus, { label: string; bg: string; text: string }> = {
+  not_started: { label: 'Not started', bg: '#f9fafb', text: '#374151' },
+  in_progress: { label: 'In progress', bg: '#eff6ff', text: '#1d4ed8' },
+  completed:   { label: 'Completed',   bg: '#f0fdf4', text: '#15803d' },
+  on_hold:     { label: 'On hold',     bg: '#fffbeb', text: '#b45309' },
+  cancelled:   { label: 'Cancelled',   bg: '#fef2f2', text: '#b91c1c' },
+};
+
+export const PHASE_COLOR_PALETTE = [
+  '#2563eb', // blue
+  '#7c3aed', // purple
+  '#0f766e', // teal
+  '#d97706', // amber
+  '#db2777', // pink
+  '#16a34a', // green
+  '#ea580c', // orange
+  '#0284c7', // sky
+];
+
