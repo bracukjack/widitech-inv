@@ -55,6 +55,7 @@ import Link from "next/link";
 const lineItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, "Required"),
+  notes: z.string().optional(),
   quantity: z.number().min(1),
   unitPrice: z.number().min(0),
 });
@@ -112,18 +113,12 @@ function SortableLineItemRow({
   register,
   remove,
   canRemove,
-  currency,
-  quantity,
-  unitPrice,
 }: {
   id: string;
   index: number;
   register: ReturnType<typeof useForm<InvoiceFormData>>["register"];
   remove: (index: number) => void;
   canRemove: boolean;
-  currency: Currency;
-  quantity: number;
-  unitPrice: number;
 }) {
   const {
     attributes,
@@ -155,16 +150,15 @@ function SortableLineItemRow({
       <td className="p-2">
         <Input
           {...register(`lineItems.${index}.description`)}
-          placeholder="Description"
+          placeholder="Scope of Work"
           className="min-w-[180px]"
         />
       </td>
       <td className="p-2">
         <Input
-          type="number"
-          {...register(`lineItems.${index}.quantity`, { valueAsNumber: true })}
-          min={1}
-          className="w-20"
+          {...register(`lineItems.${index}.notes`)}
+          placeholder="Description"
+          className="min-w-[180px]"
         />
       </td>
       <td className="p-2">
@@ -174,9 +168,6 @@ function SortableLineItemRow({
           min={0}
           className="w-32"
         />
-      </td>
-      <td className="p-2 text-right font-medium whitespace-nowrap">
-        {formatCurrency((quantity || 0) * (unitPrice || 0), currency || "IDR")}
       </td>
       <td className="p-2">
         {canRemove && (
@@ -319,7 +310,7 @@ export default function InvoiceForm({
   const subtotal = useMemo(
     () =>
       (lineItems || []).reduce(
-        (sum, item) => sum + (item?.quantity || 0) * (item?.unitPrice || 0),
+        (sum, item) => sum + (item?.unitPrice || 0),
         0
       ),
     [lineItems]
@@ -344,7 +335,7 @@ export default function InvoiceForm({
   };
 
   const addQuickItem = (description: string) => {
-    append({ id: uuidv4(), description, quantity: 1, unitPrice: 0 });
+    append({ id: uuidv4(), description, notes: "", quantity: 1, unitPrice: 0 });
   };
 
   // DnD sensors
@@ -590,10 +581,9 @@ export default function InvoiceForm({
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="p-2 w-8"></th>
+                    <th className="p-2 font-medium">Scope of Work</th>
                     <th className="p-2 font-medium">Description</th>
-                    <th className="p-2 font-medium w-20">Qty</th>
-                    <th className="p-2 font-medium w-32">Unit Price</th>
-                    <th className="p-2 font-medium w-32 text-right">Total</th>
+                    <th className="p-2 font-medium w-32">Harga</th>
                     <th className="p-2 w-10"></th>
                   </tr>
                 </thead>
@@ -607,9 +597,6 @@ export default function InvoiceForm({
                         register={register}
                         remove={remove}
                         canRemove={fields.length > 1}
-                        currency={currency || "IDR"}
-                        quantity={lineItems?.[index]?.quantity || 0}
-                        unitPrice={lineItems?.[index]?.unitPrice || 0}
                       />
                     ))}
                   </tbody>
@@ -623,7 +610,7 @@ export default function InvoiceForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ id: uuidv4(), description: "", quantity: 1, unitPrice: 0 })}
+              onClick={() => append({ id: uuidv4(), description: "", notes: "", quantity: 1, unitPrice: 0 })}
             >
               <Plus className="size-4 mr-1" /> Add Item
             </Button>
