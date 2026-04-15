@@ -269,6 +269,15 @@ export default function InvoiceForm({
     setLogoState(getLogo());
   }, [invoice, setDraft]);
 
+  // Sync theme changes from LivePreviewPanel (draft store) back into the form
+  const draftTheme = useInvoiceDraftStore((s) => s.draft?.theme);
+  useEffect(() => {
+    if (draftTheme === undefined) return;
+    if (draftTheme !== getValues("theme")) {
+      setValue("theme", draftTheme, { shouldDirty: true });
+    }
+  }, [draftTheme, getValues, setValue]);
+
   const currency = watch("currency");
   const lineItems = watch("lineItems");
   const discountType = watch("discountType");

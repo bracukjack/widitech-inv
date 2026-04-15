@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import InvoiceForm from "@/components/InvoiceForm";
 import LivePreviewPanel from "@/components/LivePreviewPanel";
+import PDFExport from "@/components/PDFExport";
 import { Invoice } from "@/types/invoice";
 import { getInvoiceById, saveInvoice } from "@/lib/invoiceStore";
 import { useInvoiceDraftStore } from "@/lib/invoiceDraftStore";
@@ -20,6 +21,7 @@ export default function EditInvoicePage() {
   const [notFound, setNotFound] = useState(false);
   const savedRef = useRef(false);
   const resetDraft = useInvoiceDraftStore((s) => s.resetDraft);
+  const draft = useInvoiceDraftStore((s) => s.draft);
 
   useEffect(() => {
     const found = getInvoiceById(id);
@@ -93,6 +95,7 @@ export default function EditInvoicePage() {
             {invoice.invoiceNumber}
           </p>
         </div>
+        {draft && <PDFExport invoice={draft} />}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">

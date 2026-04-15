@@ -5,6 +5,7 @@ export type InvoiceStatus = "Draft" | "Sent" | "Paid";
 export interface LineItem {
   id: string;
   description: string;
+  notes?: string;
   quantity: number;
   unitPrice: number;
 }

@@ -23,7 +23,7 @@ function getInitials(name: string): string {
 
 function calculateTotals(invoice: Invoice) {
   const subtotal = invoice.lineItems.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
+    (sum, item) => sum + item.unitPrice,
     0
   );
 
@@ -89,6 +89,7 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
       {/* Header */}
       <div
+        data-pdf-section="header"
         style={{
           padding: "24px 32px",
           background: isFullHeader ? theme.headerBg : theme.bodyBg,
@@ -190,7 +191,7 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
       {/* Body */}
       <div style={{ padding: "24px 32px" }}>
         {/* Client & Dates */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
+        <div data-pdf-section="client-dates" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", marginBottom: "24px" }}>
           <div>
             <h3
               style={{
@@ -267,20 +268,17 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
         </div>
 
         {/* Line Items Table */}
-        <table style={{ width: "100%", fontSize: "14px", borderCollapse: "collapse" }}>
+        <table data-pdf-section="line-items" style={{ width: "100%", fontSize: "14px", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: theme.tableHeaderBg }}>
               <th style={{ textAlign: "left", padding: "12px", fontWeight: 600, color: theme.tableHeaderText, borderRadius: "6px 0 0 0" }}>
+                Scope of Work
+              </th>
+              <th style={{ textAlign: "left", padding: "12px", fontWeight: 600, color: theme.tableHeaderText }}>
                 Description
               </th>
-              <th style={{ textAlign: "center", padding: "12px", fontWeight: 600, color: theme.tableHeaderText, width: "64px" }}>
-                Qty
-              </th>
-              <th style={{ textAlign: "right", padding: "12px", fontWeight: 600, color: theme.tableHeaderText, width: "128px" }}>
-                Unit Price
-              </th>
               <th style={{ textAlign: "right", padding: "12px", fontWeight: 600, color: theme.tableHeaderText, width: "128px", borderRadius: "0 6px 0 0" }}>
-                Amount
+                Harga
               </th>
             </tr>
           </thead>
@@ -291,16 +289,13 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
                 style={{ borderBottom: `1px solid ${theme.borderColor}` }}
               >
                 <td style={{ padding: "12px", color: theme.bodyText }}>
-                  {item.description || "-"}
+                  {item.description}
                 </td>
-                <td style={{ padding: "12px", textAlign: "center", color: theme.mutedText }}>
-                  {item.quantity}
-                </td>
-                <td style={{ padding: "12px", textAlign: "right", color: theme.mutedText }}>
-                  {formatCurrency(item.unitPrice, invoice.currency)}
+                <td style={{ padding: "12px", color: theme.mutedText }}>
+                  {item.notes || "-"}
                 </td>
                 <td style={{ padding: "12px", textAlign: "right", fontWeight: 500, color: theme.bodyText }}>
-                  {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
+                  {formatCurrency(item.unitPrice, invoice.currency)}
                 </td>
               </tr>
             ))}
@@ -308,7 +303,7 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
         </table>
 
         {/* Totals */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
+        <div data-pdf-section="totals" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
           <div style={{ width: "288px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "6px" }}>
               <span style={{ color: theme.mutedText }}>Subtotal</span>
@@ -356,11 +351,14 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
         {/* Payment Schedule */}
         {invoice.paymentScheduleType === "scheduled" && invoice.paymentStages && invoice.paymentStages.length > 0 && (
           <div
+            data-pdf-section="payment-schedule"
             style={{
               background: theme.badgeBg,
               borderRadius: "8px",
               padding: "16px",
               marginTop: "24px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <h4
@@ -442,11 +440,14 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
         {/* Bank Details */}
         {(invoice.freelancerBankName || invoice.freelancerBankAccount) && (
           <div
+            data-pdf-section="bank-details"
             style={{
               background: theme.badgeBg,
               borderRadius: "8px",
               padding: "16px",
               marginTop: "24px",
+              pageBreakInside: "avoid",
+              breakInside: "avoid",
             }}
           >
             <h4
@@ -486,7 +487,7 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
         {/* Notes */}
         {invoice.notes && (
-          <div style={{ marginTop: "24px" }}>
+          <div data-pdf-section="notes" style={{ marginTop: "24px", pageBreakInside: "avoid", breakInside: "avoid" }}>
             <h4
               style={{
                 fontSize: "11px",
@@ -507,6 +508,7 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
         {/* Footer */}
         <div
+          data-pdf-section="footer"
           style={{
             textAlign: "center",
             paddingTop: "24px",
