@@ -1,149 +1,205 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
-import MainContent from "@/components/MainContent";
-import GlobalSearch from "@/components/GlobalSearch";
-import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
-import { Toaster } from "sonner";
-import { useSearchStore } from "@/lib/searchStore";
-import { useSettingsStore } from "@/lib/settingsStore";
-import { useProjectStore } from "@/lib/projectStore";
-import { useClientStore } from "@/lib/clientStore";
-import { useTimeStore } from "@/lib/timeStore";
-import { useFinanceStore } from "@/lib/financeStore";
-import { useNotificationStore } from "@/lib/notificationStore";
-import { useCategoryStore } from "@/lib/categoryStore";
-import { useActivityStore } from "@/lib/activityStore";
-import { getInvoices } from "@/lib/invoiceStore";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { FileText, LogOut, Plus, Settings, ShieldCheck } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { useInvoiceStore } from "@/lib/store";
+import { logoutAction } from "@/lib/actions/auth";
+import type { AppData } from "@/lib/data";
+import { cn } from "@/lib/utils";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+const REFRESH_AFTER_MS = 30_000;
+
+export default function AppShell({ initial, children }: { initial: AppData; children: React.ReactNode }) {
   const pathname = usePathname();
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-  const searchStore = useSearchStore();
+  const user = initial.user;
 
-  // Rehydrate all stores on mount
+  // Load server data into the client store. Done in an effect (browser only) so a
+  // server render never puts one user's data into the shared module-level store.
   useEffect(() => {
-    useSettingsStore.persist.rehydrate();
-    useProjectStore.persist.rehydrate();
-    useClientStore.persist.rehydrate();
-    useTimeStore.persist.rehydrate();
-    useFinanceStore.persist.rehydrate();
-    useNotificationStore.persist.rehydrate();
-    useCategoryStore.persist.rehydrate();
-    useActivityStore.persist.rehydrate();
-    setHydrated(true);
+    useInvoiceStore.getState().init(initial);
+  }, [initial]);
+
+  // Pick up changes made on another device or tab when the user comes back.
+  useEffect(() => {
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < REFRESH_AFTER_MS) return;
+      last = Date.now();
+      void useInvoiceStore.getState().refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
-  // Generate notifications on mount and when projects/invoices change
-  const projects = useProjectStore((s) => s.projects);
-  const generateNotifications = useNotificationStore((s) => s.generateNotifications);
+  const nav = [
+    { href: "/", label: "Invoice" },
+    { href: "/settings", label: "Pengaturan" },
+    ...(user.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+  ];
 
-  useEffect(() => {
-    if (!hydrated) return;
-    const invoices = getInvoices();
-    generateNotifications(projects, invoices);
-  }, [hydrated, projects, generateNotifications]);
-
-  // Onboarding redirect
-  const hasCompletedOnboarding = useSettingsStore((s) => s.settings.hasCompletedOnboarding);
-  useEffect(() => {
-    if (hydrated && !hasCompletedOnboarding && pathname !== '/onboarding') {
-      router.push('/onboarding');
-    }
-  }, [hydrated, hasCompletedOnboarding, pathname, router]);
-
-  // Global keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable) {
-        // Only allow Escape and Cmd+K in inputs
-        if (e.key === 'Escape') {
-          searchStore.close();
-          setShortcutsOpen(false);
-          return;
-        }
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-          e.preventDefault();
-          searchStore.open();
-          return;
-        }
-        return;
-      }
-
-      // Cmd+K - Search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchStore.open();
-        return;
-      }
-
-      // ? - Show shortcuts
-      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
-        setShortcutsOpen((prev) => !prev);
-        return;
-      }
-
-      // Escape
-      if (e.key === 'Escape') {
-        searchStore.close();
-        setShortcutsOpen(false);
-        return;
-      }
-
-      // Navigation shortcuts (Cmd+1-6)
-      if (e.metaKey || e.ctrlKey) {
-        const routes: Record<string, string> = {
-          '1': '/',
-          '2': '/projects',
-          '3': '/clients',
-          '4': '/finance',
-          '5': '/invoices',
-          '6': '/time-tracker',
-        };
-        if (routes[e.key]) {
-          e.preventDefault();
-          router.push(routes[e.key]);
-          return;
-        }
-
-        // Cmd+Shift shortcuts
-        if (e.shiftKey) {
-          if (e.key === 'P' || e.key === 'p') {
-            e.preventDefault();
-            router.push('/projects');
-            return;
-          }
-          if (e.key === 'C' || e.key === 'c') {
-            e.preventDefault();
-            router.push('/clients');
-            return;
-          }
-          if (e.key === 'I' || e.key === 'i') {
-            e.preventDefault();
-            router.push('/invoice/new');
-            return;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [router, searchStore]);
+  // Invoice screens bring their own bottom action bar on mobile.
+  const showBottomNav = !pathname.startsWith("/invoice/");
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
     <>
-      <Sidebar />
-      <MainContent>{children}</MainContent>
-      <GlobalSearch />
-      <KeyboardShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
-      <Toaster position="bottom-right" richColors closeButton />
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-lg">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:px-6">
+          <Link href="/" className="mr-4 flex items-center gap-2 font-semibold tracking-tight">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
+              W
+            </span>
+            <span className="text-[15px]">Widitech Invoice</span>
+          </Link>
+          <nav className="hidden items-center gap-1 md:flex">
+            {nav.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                  isActive(n.href) ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-1.5">
+            <ThemeToggle />
+            <Button asChild size="sm" className="hidden md:inline-flex">
+              <Link href="/invoice/new">
+                <Plus className="size-4" /> Buat invoice
+              </Link>
+            </Button>
+            <UserMenu name={user.name} email={user.email} isAdmin={user.role === "admin"} />
+          </div>
+        </div>
+      </header>
+
+      <main className={cn("mx-auto w-full max-w-6xl", showBottomNav && "pb-24 md:pb-0")}>{children}</main>
+
+      {showBottomNav && (
+        <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/90 px-6 pt-2 backdrop-blur-lg md:hidden">
+          <div className="mx-auto flex max-w-sm items-end justify-between">
+            <BottomLink href="/" label="Invoice" icon={FileText} active={isActive("/")} />
+            <Link
+              href="/invoice/new"
+              aria-label="Buat invoice"
+              className="-mt-7 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+            >
+              <Plus className="size-7" />
+            </Link>
+            <BottomLink href="/settings" label="Pengaturan" icon={Settings} active={isActive("/settings")} />
+          </div>
+        </nav>
+      )}
     </>
+  );
+}
+
+function UserMenu({ name, email, isAdmin }: { name: string; email: string; isAdmin: boolean }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  const initials = (name || email).trim().slice(0, 1).toUpperCase();
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Menu akun"
+        aria-expanded={open}
+        className="grid size-9 place-items-center rounded-full bg-muted text-sm font-semibold ring-offset-background transition hover:ring-2 hover:ring-border"
+      >
+        {initials}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-lg">
+          <div className="px-3 py-2.5">
+            <p className="truncate text-sm font-semibold">{name || "Tanpa nama"}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
+          </div>
+          <div className="my-1 h-px bg-border" />
+          <MenuLink href="/settings" icon={Settings} onClick={() => setOpen(false)}>
+            Pengaturan
+          </MenuLink>
+          {isAdmin && (
+            <MenuLink href="/admin" icon={ShieldCheck} onClick={() => setOpen(false)}>
+              Panel admin
+            </MenuLink>
+          )}
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-4" /> Keluar
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuLink({
+  href,
+  icon: Icon,
+  onClick,
+  children,
+}: {
+  href: string;
+  icon: typeof Settings;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link href={href} onClick={onClick} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted">
+      <Icon className="size-4 text-muted-foreground" /> {children}
+    </Link>
+  );
+}
+
+function BottomLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: typeof FileText;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex w-20 flex-col items-center gap-0.5 py-1 text-[11px] font-medium",
+        active ? "text-primary" : "text-muted-foreground"
+      )}
+    >
+      <Icon className="size-5.5" />
+      {label}
+    </Link>
   );
 }

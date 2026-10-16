@@ -1,31 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ThemeToggle() {
-  const [dark, setDark] = useState(false);
+// The "dark" class is applied before paint by the inline script in app/layout.tsx;
+// this just mirrors it.
+function subscribe(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+const isDark = () => document.documentElement.classList.contains("dark");
 
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const isDark =
-      stored === "dark" ||
-      (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
+export default function ThemeToggle() {
+  const dark = useSyncExternalStore(subscribe, isDark, () => false);
 
   const toggle = () => {
     const next = !dark;
-    setDark(next);
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
-    <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label="Toggle theme">
-      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    <Button variant="ghost" size="icon-sm" onClick={toggle} aria-label={dark ? "Mode terang" : "Mode gelap"}>
+      {dark ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
     </Button>
   );
 }

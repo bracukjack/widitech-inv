@@ -47,7 +47,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: #ffffff;
+  --background: #f6f7f9;
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
@@ -63,8 +63,8 @@
   --accent-foreground: #171717;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
+  --border: #e7e8ec;
+  --input: #dcdee3;
   --ring: #0D7377;
   --sidebar: #fafafa;
   --sidebar-foreground: #0a0a0a;
@@ -82,11 +82,11 @@
 }
 
 .dark {
-  --background: #0a0a0a;
+  --background: #09090b;
   --foreground: #fafafa;
-  --card: #0a0a0a;
+  --card: #131316;
   --card-foreground: #fafafa;
-  --popover: #0a0a0a;
+  --popover: #131316;
   --popover-foreground: #fafafa;
   --primary: #14b8a6;
   --primary-foreground: #0a0a0a;
@@ -98,8 +98,8 @@
   --accent-foreground: #fafafa;
   --destructive: #dc2626;
   --destructive-foreground: #fafafa;
-  --border: #262626;
-  --input: #262626;
+  --border: #26262b;
+  --input: #2e2e34;
   --ring: #14b8a6;
   --sidebar: #0a0a0a;
   --sidebar-foreground: #fafafa;
@@ -117,7 +117,7 @@
 }
 
 html {
-  font-size: 120%; /* scale all rem-based sizes up 20% */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -127,6 +127,11 @@ body {
 
 * {
   border-color: var(--border);
+}
+
+/* iOS home-indicator safe area for fixed bottom bars */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
 /* Hide scrollbar for pill tabs */

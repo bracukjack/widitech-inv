@@ -1,164 +1,142 @@
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
-import { Invoice } from "@/types/invoice";
-import { createRoot } from "react-dom/client";
 import { createElement } from "react";
+import { createRoot } from "react-dom/client";
+import type { Invoice } from "@/types/invoice";
+import { getTemplate } from "@/lib/themes";
 
-// A4 dimensions: 210mm x 297mm at 96dpi ≈ 794px x 1123px
-const A4_WIDTH_PX = 794;
-const A4_HEIGHT_MM = 297;
 const PDF_WIDTH_MM = 210;
+const PDF_HEIGHT_MM = 297;
+const PAGE_MARGIN_MM = 12; // top margin on pages 2+, bottom margin on every page
 const CANVAS_SCALE = 2;
 
-export async function generatePDF(invoice: Invoice): Promise<void> {
-  const { default: InvoicePreview } = await import(
-    "@/components/InvoicePreview"
-  );
+export function pdfFileName(invoice: Invoice): string {
+  const client = (invoice.clientName || "client").trim().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
+  const num = invoice.invoiceNumber.replace(/[^\p{L}\p{N}-]+/gu, "-");
+  return `${num}${client ? `-${client}` : ""}.pdf`;
+}
 
-  // Off-screen container at exact A4 width, isolated from page styles
+/**
+ * Renders the invoice off-screen at A4 width, rasterises it and slices it
+ * into A4 pages, moving page breaks above any element marked
+ * `data-pdf-section` so rows and blocks are never cut in half.
+ */
+export async function generatePdfBlob(invoice: Invoice, logo: string): Promise<Blob> {
+  const [{ default: html2canvas }, { jsPDF }, { default: InvoiceDocument, DOC_WIDTH }] = await Promise.all([
+    import("html2canvas-pro"),
+    import("jspdf"),
+    import("@/components/InvoiceDocument"),
+  ]);
+
   const container = document.createElement("div");
-  container.style.cssText = [
-    "position:fixed",
-    "top:0",
-    "left:-9999px",
-    `width:${A4_WIDTH_PX}px`,
-    "background:#ffffff",
-    "overflow:visible",
-    "z-index:-9999",
-  ].join(";");
+  container.style.cssText = `position:fixed;top:0;left:-10000px;width:${DOC_WIDTH}px;pointer-events:none;`;
   document.body.appendChild(container);
-
   const root = createRoot(container);
 
   try {
-    // Render a fresh, isolated instance of the invoice preview
-    await new Promise<void>((resolve) => {
-      root.render(createElement(InvoicePreview, { invoice }));
-      // Wait for React render + useEffect (logo load from localStorage)
-      requestAnimationFrame(() => setTimeout(resolve, 200));
+    root.render(createElement(InvoiceDocument, { invoice, logo, variant: "pdf" }));
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
+    await document.fonts?.ready;
+    await Promise.all(
+      Array.from(container.querySelectorAll("img")).map((img) =>
+        img.complete ? null : new Promise((r) => ((img.onload = r), (img.onerror = r)))
+      )
+    );
+
+    const doc = container.querySelector("#invoice-document") as HTMLElement | null;
+    if (!doc) throw new Error("Invoice gagal dirender");
+
+    const docTop = doc.getBoundingClientRect().top;
+    const sections = Array.from(doc.querySelectorAll<HTMLElement>("[data-pdf-section]")).map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: (r.top - docTop) * CANVAS_SCALE, bottom: (r.bottom - docTop) * CANVAS_SCALE };
     });
 
-    const previewEl = container.querySelector(
-      "#invoice-preview"
-    ) as HTMLElement | null;
-    if (!previewEl) return;
-
-    // Fix width to A4 and remove visual decorations
-    previewEl.style.width = `${A4_WIDTH_PX}px`;
-    previewEl.style.borderRadius = "0";
-    previewEl.style.border = "none";
-    previewEl.style.overflow = "visible";
-    previewEl.style.minHeight = "auto";
-
-    // Record section bounding boxes BEFORE canvas capture (DOM pixels,
-    // relative to the top of the preview element)
-    const previewRect = previewEl.getBoundingClientRect();
-    const sectionRanges = Array.from(
-      previewEl.querySelectorAll("[data-pdf-section]")
-    ).map((el) => {
-      const rect = (el as HTMLElement).getBoundingClientRect();
-      return {
-        top: rect.top - previewRect.top,
-        bottom: rect.bottom - previewRect.top,
-      };
-    });
-
-    // Capture the full invoice as a single high-res canvas
-    const canvas = await html2canvas(previewEl, {
+    const pageBg = getTemplate(invoice.theme).colors.pageBg;
+    const canvas = await html2canvas(doc, {
       scale: CANVAS_SCALE,
       useCORS: true,
-      backgroundColor: "#ffffff",
+      backgroundColor: pageBg,
       logging: false,
-      width: A4_WIDTH_PX,
-      windowWidth: A4_WIDTH_PX,
+      width: DOC_WIDTH,
+      windowWidth: DOC_WIDTH,
     });
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+    const pxPerMm = canvas.width / PDF_WIDTH_MM;
+    const firstPagePx = Math.floor((PDF_HEIGHT_MM - PAGE_MARGIN_MM) * pxPerMm);
+    const nextPagePx = Math.floor((PDF_HEIGHT_MM - PAGE_MARGIN_MM * 2) * pxPerMm);
 
-    // Top margin applied to pages 2+ (page 1 starts flush at y=0)
-    const MARGIN_MM = 10;
-
-    // Canvas pixels that fill one page of content:
-    //   page 1 — full A4 height (no top margin)
-    //   pages 2+ — A4 height minus the top margin reserved for breathing room
-    const page1HeightPx = Math.round((A4_HEIGHT_MM * canvas.width) / PDF_WIDTH_MM);
-    const pageNHeightPx = Math.round(((A4_HEIGHT_MM - MARGIN_MM) * canvas.width) / PDF_WIDTH_MM);
-    const totalHeightPx = canvas.height;
-
-    // Build section-aware page break positions (canvas pixel offsets)
-    const pageStarts: number[] = [0];
-    let pageStart = 0;
-    let isFirstPage = true;
-
-    while (true) {
-      const currentPageHeightPx = isFirstPage ? page1HeightPx : pageNHeightPx;
-      if (pageStart + currentPageHeightPx >= totalHeightPx) break;
-
-      const idealBreak = pageStart + currentPageHeightPx;
-
-      // Find sections that straddle the ideal cut line
-      const straddling = sectionRanges.filter((s) => {
-        const top = s.top * CANVAS_SCALE;
-        const bottom = s.bottom * CANVAS_SCALE;
-        return top < idealBreak && bottom > idealBreak;
-      });
-
-      let safeBreak: number;
-      if (straddling.length === 0) {
-        // No section spans the cut — safe to slice here
-        safeBreak = idealBreak;
-      } else {
-        // Move cut up to before the earliest straddling section so it
-        // starts intact on the next page
-        const earliestTop = Math.min(
-          ...straddling.map((s) => s.top * CANVAS_SCALE)
-        );
-        // Guard: if the section starts at/before the current page start it
-        // is taller than a full page — accept the cut to avoid an infinite loop
-        safeBreak =
-          earliestTop > pageStart ? Math.floor(earliestTop) : idealBreak;
-      }
-
-      pageStarts.push(safeBreak);
-      pageStart = safeBreak;
-      isFirstPage = false;
+    // Work out where each page starts.
+    const starts = [0];
+    for (;;) {
+      const start = starts[starts.length - 1];
+      const ideal = start + (starts.length === 1 ? firstPagePx : nextPagePx);
+      if (ideal >= canvas.height) break;
+      const cut = sections.filter((s) => s.top < ideal && s.bottom > ideal);
+      const earliest = cut.length ? Math.min(...cut.map((s) => s.top)) : ideal;
+      // A section taller than a page can't be kept whole — cut it rather than loop forever.
+      starts.push(earliest > start + 1 ? Math.floor(earliest) : ideal);
     }
 
-    // Slice the canvas and add each slice as a PDF page
-    const sliceCanvas = document.createElement("canvas");
-    sliceCanvas.width = canvas.width;
+    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+    const slice = document.createElement("canvas");
+    slice.width = canvas.width;
+    const ctx = slice.getContext("2d")!;
 
-    pageStarts.forEach((start, i) => {
-      const end =
-        i + 1 < pageStarts.length ? pageStarts[i + 1] : totalHeightPx;
-      const sliceHeightPx = end - start;
-      const sliceHeightMM = (sliceHeightPx * PDF_WIDTH_MM) / canvas.width;
+    starts.forEach((start, i) => {
+      const end = starts[i + 1] ?? canvas.height;
+      const h = end - start;
+      slice.height = h;
+      ctx.fillStyle = pageBg;
+      ctx.fillRect(0, 0, slice.width, h);
+      ctx.drawImage(canvas, 0, start, canvas.width, h, 0, 0, canvas.width, h);
 
-      sliceCanvas.height = sliceHeightPx;
-      const ctx = sliceCanvas.getContext("2d")!;
-      ctx.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-      ctx.drawImage(
-        canvas,
-        0, start, canvas.width, sliceHeightPx,
-        0, 0, canvas.width, sliceHeightPx
-      );
-
-      // Page 1: flush to top (y=0). Pages 2+: offset by margin so content
-      // doesn't start right at the paper edge.
-      const yOffset = i === 0 ? 0 : MARGIN_MM;
       if (i > 0) pdf.addPage();
-      pdf.addImage(
-        sliceCanvas.toDataURL("image/png"),
-        "PNG",
-        0, yOffset, pdfWidth, sliceHeightMM
-      );
+      pdf.setFillColor(pageBg);
+      pdf.rect(0, 0, PDF_WIDTH_MM, PDF_HEIGHT_MM, "F");
+      pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", 0, i === 0 ? 0 : PAGE_MARGIN_MM, PDF_WIDTH_MM, h / pxPerMm);
     });
 
-    const clientName = invoice.clientName?.replace(/\s+/g, "-") || "Client";
-    pdf.save(`INV-${clientName}-${invoice.invoiceNumber}.pdf`);
+    return pdf.output("blob");
   } finally {
     root.unmount();
-    document.body.removeChild(container);
+    container.remove();
   }
+}
+
+export async function downloadPdf(invoice: Invoice, logo: string): Promise<void> {
+  const blob = await generatePdfBlob(invoice, logo);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = pdfFileName(invoice);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export function canShareFiles(): boolean {
+  if (typeof navigator === "undefined" || !navigator.canShare) return false;
+  return navigator.canShare({ files: [new File([""], "x.pdf", { type: "application/pdf" })] });
+}
+
+export async function makePdfFile(invoice: Invoice, logo: string): Promise<File> {
+  const blob = await generatePdfBlob(invoice, logo);
+  return new File([blob], pdfFileName(invoice), { type: "application/pdf" });
+}
+
+/**
+ * Opens the native share sheet with the PDF attached. Resolves to "needs-gesture"
+ * when the browser (Safari) rejects the call because generating the PDF took
+ * longer than the click's user-activation window — the caller should offer a
+ * second tap that calls this again with the same file.
+ */
+export async function shareFile(file: File, title: string, text: string): Promise<"shared" | "needs-gesture"> {
+  try {
+    await navigator.share({ files: [file], title, text });
+  } catch (e) {
+    const name = (e as Error).name;
+    if (name === "NotAllowedError") return "needs-gesture";
+    if (name !== "AbortError") throw e; // closing the share sheet is not an error
+  }
+  return "shared";
 }

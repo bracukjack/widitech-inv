@@ -1,6 +1,14 @@
-export type Currency = "IDR" | "USD" | "EUR";
+export const CURRENCIES = ["IDR", "USD", "EUR", "SGD", "MYR", "AUD"] as const;
+export type Currency = (typeof CURRENCIES)[number];
 
 export type InvoiceStatus = "Draft" | "Sent" | "Paid";
+/** Status shown in the UI — "Overdue" is derived from a Sent invoice past its due date. */
+export type DisplayStatus = InvoiceStatus | "Overdue";
+
+export type InvoiceLanguage = "id" | "en";
+
+export const PAYMENT_METHODS = ["Bank Transfer", "QRIS", "E-Wallet", "PayPal", "Wise", "Cash", "Other"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export interface LineItem {
   id: string;
@@ -26,8 +34,9 @@ export interface Invoice {
   dueDate: string;
   currency: Currency;
   status: InvoiceStatus;
+  language: InvoiceLanguage;
 
-  // Freelancer info
+  // Sender ("from") — snapshot of the business profile at the time of writing
   freelancerName: string;
   freelancerEmail: string;
   freelancerPhone: string;
@@ -36,7 +45,7 @@ export interface Invoice {
   freelancerBankName: string;
   freelancerBankAccountName: string;
 
-  // Client info
+  // Client ("bill to")
   clientName: string;
   clientCompany: string;
   clientEmail: string;
@@ -44,53 +53,51 @@ export interface Invoice {
   clientAddress: string;
   clientCountry: string;
 
-  // Line items
   lineItems: LineItem[];
 
-  // Financials
   discountType: "percentage" | "fixed";
   discountValue: number;
   taxType: "percentage" | "fixed";
   taxRate: number;
 
-  // Payment schedule
   paymentScheduleType: "full" | "scheduled";
   paymentStages: PaymentStage[];
 
-  // Additional
   notes: string;
-  paymentMethod: "Bank Transfer" | "PayPal" | "Wise" | "Other";
+  paymentMethod: PaymentMethod;
 
-  // Theme
+  /** Template id, see lib/themes.ts */
   theme: string;
 
-  // Timestamps
   createdAt: string;
   updatedAt: string;
-
-  // Soft delete
-  isDeleted: boolean;
-  deletedAt: string | null;
+  paidAt?: string;
 }
 
-export interface FreelancerProfile {
+export interface BusinessProfile {
   name: string;
   email: string;
   phone: string;
   address: string;
-  bankAccount: string;
   bankName: string;
+  bankAccount: string;
   bankAccountName: string;
+  /** Base64 data URL */
   logo: string;
 }
 
-export const LINE_ITEM_TEMPLATES = [
-  "UI/UX Design",
-  "Frontend Development",
-  "Backend Development",
-  "API Integration",
-  "Website Redesign",
-  "Plugin / License",
-  "Maintenance & Support",
-  "Consulting",
-] as const;
+export interface InvoiceDefaults {
+  currency: Currency;
+  taxRate: number;
+  paymentTermsDays: number;
+  prefix: string;
+  theme: string;
+  language: InvoiceLanguage;
+  paymentMethod: PaymentMethod;
+  notes: string;
+}
+
+export interface Settings {
+  profile: BusinessProfile;
+  defaults: InvoiceDefaults;
+}
