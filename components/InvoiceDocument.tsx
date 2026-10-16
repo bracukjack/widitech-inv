@@ -6,6 +6,8 @@ import { fontStack, getTemplate, type TemplateConfig } from "@/lib/themes";
 /** A4 width at 96dpi — the document is always laid out at this width and scaled for display. */
 export const DOC_WIDTH = 794;
 export const DOC_HEIGHT = 1123;
+/** Slightly under the printable height of PDF page 1 (285mm at DOC_WIDTH = 210mm), so it never spills onto page 2. */
+const PDF_FIRST_PAGE_HEIGHT = Math.floor((285 / 210) * DOC_WIDTH) - 8;
 
 const LABELS = {
   id: {
@@ -87,7 +89,7 @@ function initials(name: string): string {
 interface InvoiceDocumentProps {
   invoice: Invoice;
   logo?: string;
-  /** "pdf" drops the page frame and min-height so the capture is tight. */
+  /** "pdf" renders for capture: no page frame, min-height of one printable page. */
   variant?: "screen" | "pdf";
   /** Renders with this template instead of the invoice's own one. */
   template?: TemplateConfig;
@@ -127,7 +129,8 @@ export default function InvoiceDocument({ invoice, logo, variant = "screen", tem
         fontFamily: fontStack(t.font),
         fontSize: 13.5,
         lineHeight: 1.5,
-        minHeight: variant === "screen" ? DOC_HEIGHT : undefined,
+        // In the PDF, fill page 1 (A4 minus the 12mm bottom margin) so the centred stamp always lands on the page.
+        minHeight: variant === "screen" ? DOC_HEIGHT : PDF_FIRST_PAGE_HEIGHT,
         boxSizing: "border-box",
       }}
     >
@@ -296,20 +299,25 @@ export default function InvoiceDocument({ invoice, logo, variant = "screen", tem
       </div>
 
       {invoice.status === "Paid" && (
+        // Faint watermark centred on the first A4 page (fixed offset, so it never straddles a page break).
         <div
+          aria-hidden
           style={{
             position: "absolute",
-            top: 210,
-            right: 56,
-            transform: "rotate(-12deg)",
-            border: "3px solid #16A34A",
+            top: DOC_HEIGHT / 2,
+            left: "50%",
+            transform: "translate(-50%, -50%) rotate(-20deg)",
+            border: "6px solid #16A34A",
             color: "#16A34A",
-            borderRadius: 8,
-            padding: "4px 18px",
-            fontSize: 28,
+            borderRadius: 16,
+            padding: "8px 40px",
+            fontSize: 84,
             fontWeight: 800,
-            letterSpacing: "0.12em",
-            opacity: 0.8,
+            letterSpacing: "0.14em",
+            lineHeight: 1.1,
+            whiteSpace: "nowrap",
+            opacity: 0.12,
+            pointerEvents: "none",
             fontFamily: "var(--font-inter), Arial, sans-serif",
           }}
         >
