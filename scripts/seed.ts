@@ -32,6 +32,14 @@ async function main() {
       .set({ design: sql`jsonb_set(${schema.templates.design}, '{decoration}', to_jsonb(${design.decoration}::text))` })
       .where(and(eq(schema.templates.id, id), sql`not (${schema.templates.design} ? 'decoration')`));
   }
+  // Remember which built-ins exist so the app's auto-sync (lib/data.ts) won't re-add ones an admin deletes later.
+  const [sync] = await db.select().from(schema.siteSettings).where(eq(schema.siteSettings.id, 3)).limit(1);
+  const previous = Array.isArray(sync?.data?.seeded) ? (sync.data.seeded as string[]) : [];
+  const seeded = [...new Set([...previous, ...BUILTIN_TEMPLATES.map((t) => t.id)])];
+  await db
+    .insert(schema.siteSettings)
+    .values({ id: 3, data: { seeded } })
+    .onConflictDoUpdate({ target: schema.siteSettings.id, set: { data: { seeded }, updatedAt: new Date() } });
   console.log(`✓ ${BUILTIN_TEMPLATES.length} template bawaan tersedia`);
 
   // Master admin

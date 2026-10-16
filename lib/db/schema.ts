@@ -81,7 +81,7 @@ export const templates = pgTable("templates", {
   ...timestamps,
 });
 
-/** Admin-editable site content: row 1 = site settings, row 2 = landing page content. */
+/** Site-wide data: row 1 = site settings, row 2 = landing page content, row 3 = built-in template sync state. */
 export const siteSettings = pgTable("site_settings", {
   id: integer("id").primaryKey().default(1),
   data: jsonb("data").$type<Record<string, unknown>>().notNull(),
