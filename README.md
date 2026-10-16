@@ -3,7 +3,7 @@
 Aplikasi pembuat invoice yang cepat dan simpel: isi klien & item, pilih template, lalu download PDF atau kirim lewat WhatsApp/email.
 
 - Login email + password; semua data tersimpan di **PostgreSQL**
-- 18 template bawaan (5 layout header, 3 gaya tabel, 2 gaya total, 6 ornamen) — bisa diedit/ditambah oleh admin
+- 30 template bawaan (5 layout header, 3 gaya tabel, 2 gaya total, 6 ornamen) — bisa diedit/ditambah oleh admin
 - Branding per pengguna: warna brand, font, ornamen, watermark logo, tanda tangan (gambar langsung / unggah), stempel, teks penutup
 - Dokumen invoice dalam Bahasa Indonesia atau English
 - Autofill klien & item dari invoice sebelumnya
