@@ -2,6 +2,7 @@ import {
   CURRENCIES,
   PAYMENT_METHODS,
   type BusinessProfile,
+  type InvoiceBranding,
   type Currency,
   type Invoice,
   type InvoiceDefaults,
@@ -23,6 +24,18 @@ export const DEFAULT_PROFILE: BusinessProfile = {
   bankAccount: "",
   bankAccountName: "",
   logo: "",
+};
+
+export const DEFAULT_BRANDING: InvoiceBranding = {
+  color: "",
+  font: "",
+  decoration: "",
+  watermark: false,
+  signature: "",
+  stamp: "",
+  signatureName: "",
+  signatureTitle: "",
+  footerText: "",
 };
 
 export const DEFAULT_DEFAULTS: InvoiceDefaults = {
@@ -102,6 +115,7 @@ export function normalizeInvoice(raw: Loose): Invoice {
 export function normalizeSettings(raw: Loose | null): Settings {
   const profile = (raw?.profile ?? {}) as Loose;
   const defaults = (raw?.defaults ?? {}) as Loose;
+  const branding = (raw?.branding ?? {}) as Loose;
   return {
     profile: {
       name: str(profile.name),
@@ -122,6 +136,17 @@ export function normalizeSettings(raw: Loose | null): Settings {
       language: oneOf(defaults.language, ["id", "en"] as const, DEFAULT_DEFAULTS.language),
       paymentMethod: oneOf<PaymentMethod>(defaults.paymentMethod, PAYMENT_METHODS, DEFAULT_DEFAULTS.paymentMethod),
       notes: str(defaults.notes, DEFAULT_DEFAULTS.notes),
+    },
+    branding: {
+      color: /^#[0-9a-fA-F]{6}$/.test(str(branding.color)) ? str(branding.color) : "",
+      font: str(branding.font),
+      decoration: str(branding.decoration),
+      watermark: branding.watermark === true,
+      signature: str(branding.signature),
+      stamp: str(branding.stamp),
+      signatureName: str(branding.signatureName),
+      signatureTitle: str(branding.signatureTitle),
+      footerText: str(branding.footerText),
     },
   };
 }

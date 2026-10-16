@@ -1,5 +1,5 @@
 import { boolean, date, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import type { BusinessProfile, Invoice, InvoiceDefaults } from "@/types/invoice";
+import type { BusinessProfile, Invoice, InvoiceBranding, InvoiceDefaults } from "@/types/invoice";
 import type { TemplateConfig } from "@/lib/themes";
 
 const timestamps = {
@@ -41,6 +41,7 @@ export const userSettings = pgTable("user_settings", {
     .references(() => users.id, { onDelete: "cascade" }),
   profile: jsonb("profile").$type<BusinessProfile>().notNull(),
   defaults: jsonb("defaults").$type<InvoiceDefaults>().notNull(),
+  branding: jsonb("branding").$type<InvoiceBranding>().notNull().default({} as InvoiceBranding),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

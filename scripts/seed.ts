@@ -10,7 +10,7 @@ config();
 
 import bcrypt from "bcryptjs";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import postgres from "postgres";
 import * as schema from "../lib/db/schema";
 import { BUILTIN_TEMPLATES } from "../lib/themes";
@@ -26,6 +26,11 @@ async function main() {
   for (const t of BUILTIN_TEMPLATES) {
     const { id, name, description, isActive, sortOrder, ...design } = t;
     await db.insert(schema.templates).values({ id, name, description, design, isActive, sortOrder }).onConflictDoNothing();
+    // Templates seeded by older versions have no ornament yet — add it without touching admin edits.
+    await db
+      .update(schema.templates)
+      .set({ design: sql`jsonb_set(${schema.templates.design}, '{decoration}', to_jsonb(${design.decoration}::text))` })
+      .where(and(eq(schema.templates.id, id), sql`not (${schema.templates.design} ? 'decoration')`));
   }
   console.log(`✓ ${BUILTIN_TEMPLATES.length} template bawaan tersedia`);
 

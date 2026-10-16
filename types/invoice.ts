@@ -97,7 +97,24 @@ export interface InvoiceDefaults {
   notes: string;
 }
 
+/** Per-user look applied on top of whichever template an invoice uses. Empty string = keep the template's own. */
+export interface InvoiceBranding {
+  color: string;
+  font: string;
+  decoration: string;
+  /** Faint logo in the page background. */
+  watermark: boolean;
+  /** PNG data URLs */
+  signature: string;
+  stamp: string;
+  signatureName: string;
+  signatureTitle: string;
+  /** Replaces the default "thank you" line. */
+  footerText: string;
+}
+
 export interface Settings {
   profile: BusinessProfile;
   defaults: InvoiceDefaults;
+  branding: InvoiceBranding;
 }

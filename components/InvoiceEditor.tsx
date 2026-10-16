@@ -78,6 +78,7 @@ export default function InvoiceEditor({ initial, title, onSave, onCancel, keepDr
   const [saving, setSaving] = useState(false);
   const allInvoices = useInvoiceStore((s) => s.invoices);
   const logo = useInvoiceStore((s) => s.settings.profile.logo);
+  const branding = useInvoiceStore((s) => s.settings.branding);
 
   // Sections the user has collapsed. "Dari" starts closed once the profile fills it in.
   const [collapsed, setCollapsed] = useState<Set<SectionKey>>(
@@ -550,6 +551,7 @@ export default function InvoiceEditor({ initial, title, onSave, onCancel, keepDr
               summary={getTemplate(inv.theme).name}
             >
               <TemplatePicker value={inv.theme} onChange={(theme) => patch({ theme })} />
+              <BrandingHint />
             </Section>
 
             <Section
@@ -722,7 +724,8 @@ export default function InvoiceEditor({ initial, title, onSave, onCancel, keepDr
           {/* ---------- desktop live preview ---------- */}
           <aside className="sticky top-18 hidden max-h-[calc(100vh-88px)] space-y-3 overflow-y-auto pb-6 lg:block">
             <TemplatePicker value={inv.theme} onChange={(theme) => patch({ theme })} />
-            <ScaledPreview invoice={inv} logo={logo} />
+            <BrandingHint />
+            <ScaledPreview invoice={inv} logo={logo} branding={branding} />
           </aside>
         </div>
       </div>
@@ -759,7 +762,7 @@ export default function InvoiceEditor({ initial, title, onSave, onCancel, keepDr
             <TemplatePicker value={inv.theme} onChange={(theme) => patch({ theme })} />
           </div>
           <div className="flex-1 overflow-y-auto bg-muted/50 p-4">
-            <ScaledPreview invoice={inv} logo={logo} />
+            <ScaledPreview invoice={inv} logo={logo} branding={branding} />
           </div>
         </div>
       )}
@@ -768,6 +771,17 @@ export default function InvoiceEditor({ initial, title, onSave, onCancel, keepDr
 }
 
 // ---------------------------------------------------------------------------
+
+function BrandingHint() {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Ingin warna, ornamen, tanda tangan atau stempel bisnis Anda?{" "}
+      <Link href="/settings" className="font-medium text-primary hover:underline">
+        Atur branding
+      </Link>
+    </p>
+  );
+}
 
 function SaveIcon({ saving }: { saving: boolean }) {
   return saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />;

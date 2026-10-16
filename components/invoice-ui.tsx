@@ -10,14 +10,15 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { DisplayStatus, Invoice } from "@/types/invoice";
+import type { DisplayStatus, Invoice, InvoiceBranding } from "@/types/invoice";
 import InvoiceDocument, {
   DOC_HEIGHT,
   DOC_WIDTH,
 } from "@/components/InvoiceDocument";
 import { STATUS_LABEL } from "@/lib/invoice";
 import type { TemplateConfig } from "@/lib/themes";
-import { useActiveTemplates } from "@/lib/store";
+import { useActiveTemplates, useInvoiceStore } from "@/lib/store";
+import { applyBranding } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLE: Record<DisplayStatus, string> = {
@@ -86,12 +87,14 @@ export function ScaledPreview({
   invoice,
   logo,
   template,
+  branding,
   className,
 }: {
   invoice: Invoice;
   logo?: string;
   /** Overrides the invoice's own template (used by the admin template editor). */
   template?: TemplateConfig;
+  branding?: InvoiceBranding | null;
   className?: string;
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +141,7 @@ export function ScaledPreview({
           visibility: scale ? "visible" : "hidden",
         }}
       >
-        <InvoiceDocument invoice={invoice} logo={logo} template={template} />
+        <InvoiceDocument invoice={invoice} logo={logo} template={template} branding={branding} />
       </div>
     </div>
   );
@@ -153,9 +156,10 @@ export function TemplateThumb({ template: t }: { template: TemplateConfig }) {
   );
   return (
     <div
-      className="flex aspect-[3/4] w-full flex-col overflow-hidden rounded-md"
+      className="relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-md"
       style={{ background: c.pageBg }}
     >
+      <ThumbOrnament kind={t.decoration} color={c.accent} />
       {t.layout === "band" && (
         <div
           className="flex items-center justify-between px-2 py-2.5"
@@ -256,6 +260,43 @@ export function TemplateThumb({ template: t }: { template: TemplateConfig }) {
   );
 }
 
+/** Miniature of the page ornament so thumbnails hint at it. */
+function ThumbOrnament({ kind, color }: { kind: TemplateConfig["decoration"]; color: string }) {
+  const style = { position: "absolute" as const, pointerEvents: "none" as const };
+  switch (kind) {
+    case "waves":
+      return (
+        <svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ ...style, left: 0, bottom: 0, width: "100%", height: "12%" }}>
+          <path d="M0 10 C 20 2, 40 18, 60 10 S 90 4, 100 10 L100 20 L0 20 Z" fill={color} opacity={0.25} />
+        </svg>
+      );
+    case "dots":
+      return (
+        <svg width="22" height="16" style={{ ...style, right: 4, bottom: 4 }}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <circle key={i} cx={2 + (i % 4) * 6} cy={2 + Math.floor(i / 4) * 6} r={1.2} fill={color} opacity={0.5} />
+          ))}
+        </svg>
+      );
+    case "geometric":
+      return (
+        <svg width="26" height="26" style={{ ...style, left: 0, bottom: 0 }}>
+          <path d="M0 26 L0 4 L22 26 Z" fill={color} opacity={0.3} />
+        </svg>
+      );
+    case "circles":
+      return (
+        <svg width="34" height="30" style={{ ...style, right: 0, bottom: 0 }}>
+          <circle cx="30" cy="28" r="18" fill={color} opacity={0.2} />
+        </svg>
+      );
+    case "lines":
+      return <div style={{ ...style, left: 0, right: 0, bottom: 0, height: 3, background: `repeating-linear-gradient(-60deg, ${color} 0 2px, transparent 2px 5px)`, opacity: 0.6 }} />;
+    default:
+      return null;
+  }
+}
+
 export function TemplatePicker({
   value,
   onChange,
@@ -266,6 +307,7 @@ export function TemplatePicker({
   layout?: "scroll" | "grid";
 }) {
   const templates = useActiveTemplates();
+  const branding = useInvoiceStore((s) => s.settings.branding);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({
     atStart: true,
@@ -326,7 +368,7 @@ export function TemplatePicker({
             : "border-border hover:border-foreground/25",
         )}
       >
-        <TemplateThumb template={t} />
+        <TemplateThumb template={applyBranding(t, branding)} />
         <span
           className={cn(
             "mt-1.5 block truncate px-0.5 text-xs font-medium",

@@ -27,6 +27,18 @@ export const FONT_LABEL: Record<FontKey, string> = {
   jetbrains: "JetBrains Mono (mono)",
 };
 
+/** Decorative ornaments drawn on the page (inline SVG, so they also end up in the PDF). */
+export const DECORATIONS = ["none", "waves", "dots", "geometric", "circles", "lines"] as const;
+export type Decoration = (typeof DECORATIONS)[number];
+export const DECORATION_LABEL: Record<Decoration, string> = {
+  none: "Tanpa ornamen",
+  waves: "Gelombang",
+  dots: "Titik-titik",
+  geometric: "Geometris",
+  circles: "Lingkaran",
+  lines: "Garis miring",
+};
+
 export const COLOR_KEYS = [
   "accent",
   "headerBg",
@@ -51,12 +63,13 @@ export interface TemplateConfig {
   colors: Record<ColorKey, string>;
   font: FontKey;
   headingWeight: number;
+  decoration: Decoration;
   /** Inactive templates still render existing invoices but are hidden from pickers. */
   isActive: boolean;
   sortOrder: number;
 }
 
-type BuiltinTemplate = Omit<TemplateConfig, "isActive" | "sortOrder">;
+type BuiltinTemplate = Omit<TemplateConfig, "isActive" | "sortOrder" | "decoration"> & { decoration?: Decoration };
 
 /** Starting set — seeded into the database, and the fallback before templates load. */
 const BUILTINS: BuiltinTemplate[] = [
@@ -256,9 +269,88 @@ const BUILTINS: BuiltinTemplate[] = [
     font: "inter",
     headingWeight: 700,
   },
+  {
+    id: "aurora",
+    name: "Aurora",
+    description: "Ungu tua, lingkaran lembut",
+    layout: "band",
+    table: "filled",
+    totalStyle: "box",
+    decoration: "circles",
+    colors: {
+      accent: "#7C3AED", headerBg: "#4C1D95", headerText: "#FFFFFF", pageBg: "#FFFFFF", text: "#1E1B3A",
+      muted: "#6B6584", border: "#EDE9FE", soft: "#F5F3FF", tableHeaderBg: "#F5F3FF", tableHeaderText: "#5B21B6",
+    },
+    font: "grotesk",
+    headingWeight: 700,
+  },
+  {
+    id: "coral",
+    name: "Coral",
+    description: "Merah koral, sudut geometris",
+    layout: "accent",
+    table: "lines",
+    totalStyle: "box",
+    decoration: "geometric",
+    colors: {
+      accent: "#F43F5E", headerBg: "#FFFFFF", headerText: "#3F0D17", pageBg: "#FFFFFF", text: "#2B1A1E",
+      muted: "#7A6268", border: "#FFE4E6", soft: "#FFF1F2", tableHeaderBg: "#FFFFFF", tableHeaderText: "#9F1239",
+    },
+    font: "inter",
+    headingWeight: 700,
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    description: "Hijau hutan, gelombang",
+    layout: "split",
+    table: "striped",
+    totalStyle: "line",
+    decoration: "waves",
+    colors: {
+      accent: "#15803D", headerBg: "#14532D", headerText: "#F0FDF4", pageBg: "#FFFFFF", text: "#14281D",
+      muted: "#56695D", border: "#DCFCE7", soft: "#F0FDF4", tableHeaderBg: "#15803D", tableHeaderText: "#FFFFFF",
+    },
+    font: "inter",
+    headingWeight: 700,
+  },
+  {
+    id: "studio",
+    name: "Studio",
+    description: "Hitam & kuning, titik-titik",
+    layout: "minimal",
+    table: "filled",
+    totalStyle: "box",
+    decoration: "dots",
+    colors: {
+      accent: "#D97706", headerBg: "#FFFFFF", headerText: "#111111", pageBg: "#FFFFFF", text: "#111111",
+      muted: "#5C5C5C", border: "#E7E5E4", soft: "#FFFBEB", tableHeaderBg: "#111111", tableHeaderText: "#FDE68A",
+    },
+    font: "grotesk",
+    headingWeight: 800,
+  },
 ];
 
-export const BUILTIN_TEMPLATES: TemplateConfig[] = BUILTINS.map((t, i) => ({ ...t, isActive: true, sortOrder: i }));
+/** Ornaments for the original templates (newer ones declare their own). */
+const BUILTIN_DECORATION: Record<string, Decoration> = {
+  professional: "waves",
+  modern: "geometric",
+  fresh: "dots",
+  tech: "lines",
+  sunset: "circles",
+  rose: "circles",
+  ocean: "waves",
+  luxury: "geometric",
+  mono: "lines",
+  lavender: "dots",
+};
+
+export const BUILTIN_TEMPLATES: TemplateConfig[] = BUILTINS.map((t, i) => ({
+  ...t,
+  decoration: t.decoration ?? BUILTIN_DECORATION[t.id] ?? "none",
+  isActive: true,
+  sortOrder: i,
+}));
 
 export const DEFAULT_TEMPLATE_ID = "professional";
 
@@ -284,4 +376,84 @@ export function getTemplate(id: string | undefined): TemplateConfig {
     registry.find((t) => t.isActive) ||
     BUILTIN_TEMPLATES[0]
   );
+}
+
+// --- user branding applied on top of a template ---
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function luminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 1;
+  const [r, g, b] = rgb.map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Mix a colour with white (amount 0..1). */
+export function tint(hex: string, amount: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const mix = rgb.map((c) => Math.round(c + (255 - c) * amount));
+  return `#${mix.map((c) => c.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+/** Mix a colour with black (amount 0..1). */
+export function shade(hex: string, amount: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const mix = rgb.map((c) => Math.round(c * (1 - amount)));
+  return `#${mix.map((c) => c.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+const onColor = (hex: string) => (luminance(hex) > 0.45 ? "#111111" : "#FFFFFF");
+
+export interface BrandingOverrides {
+  color?: string;
+  font?: string;
+  decoration?: string;
+}
+
+/**
+ * Re-colours a template with the user's brand colour (strong surfaces become the
+ * brand colour, pale ones a tint of it), and swaps font/ornament if chosen.
+ */
+export function applyBranding(t: TemplateConfig, b?: BrandingOverrides | null): TemplateConfig {
+  if (!b) return t;
+  let out = t;
+  const color = b.color && /^#[0-9a-f]{6}$/i.test(b.color) ? b.color.toUpperCase() : "";
+  if (color) {
+    const c = t.colors;
+    const recolor = (bg: string, fg: string): [string, string] => {
+      const l = luminance(bg);
+      if (bg.toUpperCase() === c.pageBg.toUpperCase() || l > 0.92) return [bg, fg === c.accent ? shade(color, 0.15) : fg];
+      if (l < 0.55) return [color, onColor(color)];
+      return [tint(color, 0.88), shade(color, 0.25)];
+    };
+    const [headerBg, headerText] = recolor(c.headerBg, c.headerText);
+    const [tableHeaderBg, tableHeaderText] = recolor(c.tableHeaderBg, c.tableHeaderText);
+    out = {
+      ...out,
+      colors: {
+        ...c,
+        accent: color,
+        headerBg,
+        headerText,
+        tableHeaderBg,
+        tableHeaderText,
+        soft: tint(color, 0.93),
+        border: tint(color, 0.82),
+      },
+    };
+  }
+  if (b.font && b.font in FONT_STACKS) out = { ...out, font: b.font as FontKey };
+  if (b.decoration && (DECORATIONS as readonly string[]).includes(b.decoration)) out = { ...out, decoration: b.decoration as Decoration };
+  return out;
 }

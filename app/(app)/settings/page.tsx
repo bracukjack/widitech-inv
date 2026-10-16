@@ -12,6 +12,7 @@ import {
   FileCog,
   ImagePlus,
   KeyRound,
+  Palette,
   Landmark,
   Loader2,
   LogOut,
@@ -32,6 +33,7 @@ import { useInvoiceStore } from "@/lib/store";
 import { normalizeInvoice, normalizeSettings, type Loose } from "@/lib/normalize";
 import { changePasswordAction, logoutAction } from "@/lib/actions/auth";
 import LegacyImportBanner from "@/components/LegacyImport";
+import BrandingEditor from "@/components/BrandingEditor";
 import { CURRENCY_LABEL } from "@/lib/invoice";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +76,7 @@ export default function SettingsPage() {
   const hydrated = useInvoiceStore((s) => s.hydrated);
   const stored = useInvoiceStore((s) => s.settings);
   const invoiceCount = useInvoiceStore((s) => s.invoices.length);
+  const latestInvoice = useInvoiceStore((s) => s.invoices[0]);
   const { saveSettings, exportData, importData, clearAll } = useInvoiceStore.getState();
   const [form, setForm] = useState<Settings>(stored);
   const [dirty, setDirty] = useState(false);
@@ -98,6 +101,10 @@ export default function SettingsPage() {
 
   const setProfile = (p: Partial<Settings["profile"]>) => {
     setForm((f) => ({ ...f, profile: { ...f.profile, ...p } }));
+    setDirty(true);
+  };
+  const setBranding = (p: Partial<Settings["branding"]>) => {
+    setForm((f) => ({ ...f, branding: { ...f.branding, ...p } }));
     setDirty(true);
   };
   const setDefaults = (p: Partial<Settings["defaults"]>) => {
@@ -170,7 +177,7 @@ export default function SettingsPage() {
   const { profile, defaults } = form;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 pt-5 pb-32 sm:px-6 lg:pt-8">
+    <div className="mx-auto max-w-4xl space-y-4 px-4 pt-5 pb-32 sm:px-6 lg:pt-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Pengaturan</h1>
         <p className="text-sm text-muted-foreground">Diisi sekali, otomatis dipakai di setiap invoice baru.</p>
@@ -240,6 +247,19 @@ export default function SettingsPage() {
             <Input value={profile.address} onChange={(e) => setProfile({ address: e.target.value })} placeholder="Kota, provinsi" />
           </Field>
         </div>
+      </Card>
+
+      <Card icon={Palette} title="Branding invoice">
+        <p className="-mt-1 text-sm text-muted-foreground">
+          Ciri khas bisnis Anda — warna, ornamen, tanda tangan dan stempel — dipakai di semua invoice, template apa pun yang dipilih.
+        </p>
+        <BrandingEditor
+          value={form.branding}
+          onChange={setBranding}
+          logo={profile.logo}
+          templateId={defaults.theme}
+          previewInvoice={latestInvoice}
+        />
       </Card>
 
       <Card icon={Landmark} title="Rekening pembayaran">

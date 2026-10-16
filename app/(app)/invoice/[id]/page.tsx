@@ -30,6 +30,7 @@ export default function InvoiceDetailPage() {
   const hydrated = useInvoiceStore((s) => s.hydrated);
   const invoice = useInvoiceStore((s) => s.invoices.find((i) => i.id === id));
   const logo = useInvoiceStore((s) => s.settings.profile.logo);
+  const branding = useInvoiceStore((s) => s.settings.branding);
   const { setStatus, setTheme, deleteInvoice, restoreInvoice } = useInvoiceStore.getState();
   const [busy, setBusy] = useState<"pdf" | "share" | null>(null);
 
@@ -51,7 +52,7 @@ export default function InvoiceDetailPage() {
   const handleDownload = async () => {
     setBusy("pdf");
     try {
-      await downloadPdf(invoice, logo);
+      await downloadPdf(invoice, logo, branding);
     } catch {
       toast.error("Gagal membuat PDF. Coba lagi.");
     } finally {
@@ -62,7 +63,7 @@ export default function InvoiceDetailPage() {
   const handleShare = async () => {
     setBusy("share");
     try {
-      const file = await makePdfFile(invoice, logo);
+      const file = await makePdfFile(invoice, logo, branding);
       const result = await shareFile(file, invoice.invoiceNumber, shareText);
       if (result === "needs-gesture") {
         toast("PDF siap dibagikan", {
@@ -227,7 +228,7 @@ export default function InvoiceDetailPage() {
             <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">Ganti template</p>
             <TemplatePicker value={invoice.theme} onChange={(t) => setTheme(invoice.id, t)} />
           </div>
-          <ScaledPreview invoice={invoice} logo={logo} />
+          <ScaledPreview invoice={invoice} logo={logo} branding={branding} />
         </div>
       </div>
 

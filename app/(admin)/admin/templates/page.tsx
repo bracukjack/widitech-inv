@@ -24,6 +24,8 @@ import { useInvoiceStore } from "@/lib/store";
 import { addDaysISO, todayISO } from "@/lib/invoice";
 import {
   COLOR_KEYS,
+  DECORATION_LABEL,
+  DECORATIONS,
   DEFAULT_TEMPLATE_ID,
   FONT_LABEL,
   HEADER_LAYOUTS,
@@ -443,6 +445,15 @@ export default function AdminTemplatesPage() {
                   ))}
                 </NativeSelect>
               </Field>
+            <Field label="Ornamen halaman" className="sm:col-span-2">
+              <NativeSelect value={t.decoration} onChange={(e) => edit({ decoration: e.target.value as TemplateConfig["decoration"] })}>
+                {DECORATIONS.map((d) => (
+                  <option key={d} value={d}>
+                    {DECORATION_LABEL[d]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
             </div>
 
             <div>

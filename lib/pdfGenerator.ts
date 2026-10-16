@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import type { Invoice } from "@/types/invoice";
-import { getTemplate } from "@/lib/themes";
+import type { Invoice, InvoiceBranding } from "@/types/invoice";
+import { applyBranding, getTemplate } from "@/lib/themes";
 
 const PDF_WIDTH_MM = 210;
 const PDF_HEIGHT_MM = 297;
@@ -19,7 +19,7 @@ export function pdfFileName(invoice: Invoice): string {
  * into A4 pages, moving page breaks above any element marked
  * `data-pdf-section` so rows and blocks are never cut in half.
  */
-export async function generatePdfBlob(invoice: Invoice, logo: string): Promise<Blob> {
+export async function generatePdfBlob(invoice: Invoice, logo: string, branding?: InvoiceBranding | null): Promise<Blob> {
   const [{ default: html2canvas }, { jsPDF }, { default: InvoiceDocument, DOC_WIDTH }] = await Promise.all([
     import("html2canvas-pro"),
     import("jspdf"),
@@ -32,7 +32,7 @@ export async function generatePdfBlob(invoice: Invoice, logo: string): Promise<B
   const root = createRoot(container);
 
   try {
-    root.render(createElement(InvoiceDocument, { invoice, logo, variant: "pdf" }));
+    root.render(createElement(InvoiceDocument, { invoice, logo, branding, variant: "pdf" }));
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 50)));
     await document.fonts?.ready;
     await Promise.all(
@@ -50,7 +50,7 @@ export async function generatePdfBlob(invoice: Invoice, logo: string): Promise<B
       return { top: (r.top - docTop) * CANVAS_SCALE, bottom: (r.bottom - docTop) * CANVAS_SCALE };
     });
 
-    const pageBg = getTemplate(invoice.theme).colors.pageBg;
+    const pageBg = applyBranding(getTemplate(invoice.theme), branding).colors.pageBg;
     const canvas = await html2canvas(doc, {
       scale: CANVAS_SCALE,
       useCORS: true,
@@ -102,8 +102,8 @@ export async function generatePdfBlob(invoice: Invoice, logo: string): Promise<B
   }
 }
 
-export async function downloadPdf(invoice: Invoice, logo: string): Promise<void> {
-  const blob = await generatePdfBlob(invoice, logo);
+export async function downloadPdf(invoice: Invoice, logo: string, branding?: InvoiceBranding | null): Promise<void> {
+  const blob = await generatePdfBlob(invoice, logo, branding);
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -119,8 +119,8 @@ export function canShareFiles(): boolean {
   return navigator.canShare({ files: [new File([""], "x.pdf", { type: "application/pdf" })] });
 }
 
-export async function makePdfFile(invoice: Invoice, logo: string): Promise<File> {
-  const blob = await generatePdfBlob(invoice, logo);
+export async function makePdfFile(invoice: Invoice, logo: string, branding?: InvoiceBranding | null): Promise<File> {
+  const blob = await generatePdfBlob(invoice, logo, branding);
   return new File([blob], pdfFileName(invoice), { type: "application/pdf" });
 }
 

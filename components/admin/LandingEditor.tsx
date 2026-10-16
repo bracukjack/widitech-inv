@@ -159,7 +159,7 @@ export default function LandingEditor({ initial }: { initial: LandingContent }) 
           <p className="text-sm text-muted-foreground">Edit isi setiap section, sembunyikan, atau ubah urutannya.</p>
         </div>
         <Button asChild variant="outline">
-          <a href="/?preview=1" target="_blank" rel="noreferrer">
+          <a href="/" target="_blank" rel="noreferrer">
             <ExternalLink className="size-4" /> Lihat landing page
           </a>
         </Button>

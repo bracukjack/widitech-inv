@@ -15,6 +15,13 @@
       "when": 1792137865596,
       "tag": "0001_site_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792141739195,
+      "tag": "0002_user_branding",
+      "breakpoints": true
     }
   ]
 }

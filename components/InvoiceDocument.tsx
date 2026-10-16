@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { Invoice, InvoiceLanguage, PaymentMethod } from "@/types/invoice";
+import type { Invoice, InvoiceBranding, InvoiceLanguage, PaymentMethod } from "@/types/invoice";
 import { calculateTotals, formatCurrency, formatDate, formatNumber, lineTotal, stageAmount } from "@/lib/invoice";
-import { fontStack, getTemplate, type TemplateConfig } from "@/lib/themes";
+import { applyBranding, fontStack, getTemplate, type Decoration, type TemplateConfig } from "@/lib/themes";
 
 /** A4 width at 96dpi — the document is always laid out at this width and scaled for display. */
 export const DOC_WIDTH = 794;
@@ -37,6 +37,7 @@ const LABELS = {
     accountName: "Atas nama",
     notes: "Catatan",
     thanks: "Terima kasih atas kepercayaan Anda",
+    regards: "Hormat kami,",
     paidStamp: "LUNAS",
   },
   en: {
@@ -66,6 +67,7 @@ const LABELS = {
     accountName: "Account name",
     notes: "Notes",
     thanks: "Thank you for your business",
+    regards: "Sincerely,",
     paidStamp: "PAID",
   },
 } satisfies Record<InvoiceLanguage, Record<string, string>>;
@@ -93,10 +95,12 @@ interface InvoiceDocumentProps {
   variant?: "screen" | "pdf";
   /** Renders with this template instead of the invoice's own one. */
   template?: TemplateConfig;
+  /** The user's brand (colour, font, ornament, signature…) applied on top of the template. */
+  branding?: InvoiceBranding | null;
 }
 
-export default function InvoiceDocument({ invoice, logo, variant = "screen", template }: InvoiceDocumentProps) {
-  const t = template ?? getTemplate(invoice.theme);
+export default function InvoiceDocument({ invoice, logo, variant = "screen", template, branding }: InvoiceDocumentProps) {
+  const t = applyBranding(template ?? getTemplate(invoice.theme), branding);
   const c = t.colors;
   const L = LABELS[invoice.language] ?? LABELS.en;
   const totals = calculateTotals(invoice);
@@ -132,6 +136,7 @@ export default function InvoiceDocument({ invoice, logo, variant = "screen", tem
         // In the PDF, fill page 1 (A4 minus the 12mm bottom margin) so the centred stamp always lands on the page.
         minHeight: variant === "screen" ? DOC_HEIGHT : PDF_FIRST_PAGE_HEIGHT,
         boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
       <Header invoice={invoice} template={t} logo={logo} invoiceLabel={L.invoice} />
@@ -292,11 +297,36 @@ export default function InvoiceDocument({ invoice, logo, variant = "screen", tem
           </div>
         )}
 
+        {branding && (branding.signature || branding.stamp || branding.signatureName) && (
+          <Signature branding={branding} label={L.regards} template={t} />
+        )}
+
         <div style={{ marginTop: 36, paddingTop: 20, borderTop: `1px solid ${c.border}`, textAlign: "center" }}>
-          <p style={{ margin: 0, fontWeight: 600, color: c.accent }}>{L.thanks}</p>
+          <p style={{ margin: 0, fontWeight: 600, color: c.accent, whiteSpace: "pre-line" }}>{branding?.footerText || L.thanks}</p>
         </div>
         </div>
       </div>
+
+      <Ornament kind={t.decoration} color={c.accent} />
+      {branding?.watermark && logo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logo}
+          alt=""
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: DOC_HEIGHT / 2,
+            left: "50%",
+            width: 360,
+            height: 360,
+            objectFit: "contain",
+            transform: "translate(-50%, -50%)",
+            opacity: 0.06,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       {invoice.status === "Paid" && (
         // Faint watermark centred on the first A4 page (fixed offset, so it never straddles a page break).
@@ -622,5 +652,127 @@ function KeyVal({ k, v, muted, strong }: { k: string; v: ReactNode; muted: strin
       <span style={{ color: muted, minWidth: 96 }}>{k}</span>
       <span style={{ fontWeight: strong ? 700 : 500 }}>{v}</span>
     </p>
+  );
+}
+
+// --- branding extras ---
+
+function Signature({ branding: b, label, template: t }: { branding: InvoiceBranding; label: string; template: TemplateConfig }) {
+  const c = t.colors;
+  return (
+    <div data-pdf-section style={{ display: "flex", justifyContent: "flex-end", marginTop: 32 }}>
+      <div style={{ width: 240, textAlign: "center" }}>
+        <p style={{ margin: 0, color: c.muted }}>{label}</p>
+        <div style={{ position: "relative", height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {b.stamp && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={b.stamp}
+              alt=""
+              style={{
+                position: "absolute",
+                left: 6,
+                top: 4,
+                width: 92,
+                height: 92,
+                objectFit: "contain",
+                opacity: 0.85,
+                transform: "rotate(-10deg)",
+              }}
+            />
+          )}
+          {b.signature && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={b.signature} alt="" style={{ position: "relative", maxWidth: 200, maxHeight: 84, objectFit: "contain" }} />
+          )}
+        </div>
+        {(b.signatureName || b.signatureTitle) && (
+          <div style={{ borderTop: `1px solid ${c.text}`, paddingTop: 6 }}>
+            {b.signatureName && <p style={{ margin: 0, fontWeight: 700 }}>{b.signatureName}</p>}
+            {b.signatureTitle && <p style={{ margin: 0, fontSize: 12, color: c.muted }}>{b.signatureTitle}</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** SVG markup + placement for each ornament. */
+function ornamentSvg(kind: Decoration, color: string): { svg: string; style: CSSProperties } | null {
+  const svg = (w: number, h: number, body: string, viewBox = `0 0 ${w} ${h}`, extra = "") =>
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${viewBox}" ${extra}>${body}</svg>`;
+  switch (kind) {
+    case "waves":
+      return {
+        svg: svg(
+          DOC_WIDTH,
+          110,
+          `<path d="M0 60 C 130 20, 260 100, 400 60 S 660 20, 794 64 L 794 120 L 0 120 Z" fill="${color}" fill-opacity="0.1"/>` +
+            `<path d="M0 86 C 150 52, 300 118, 460 84 S 700 56, 794 90 L 794 120 L 0 120 Z" fill="${color}" fill-opacity="0.16"/>`,
+          "0 0 794 120",
+          'preserveAspectRatio="none"'
+        ),
+        style: { left: 0, bottom: 0, width: DOC_WIDTH, height: 110 },
+      };
+    case "dots":
+      return {
+        svg: svg(
+          150,
+          110,
+          Array.from({ length: 48 }, (_, i) => `<circle cx="${8 + (i % 8) * 19}" cy="${8 + Math.floor(i / 8) * 19}" r="3" fill="${color}" fill-opacity="0.22"/>`).join("")
+        ),
+        style: { right: 28, bottom: 28, width: 150, height: 110 },
+      };
+    case "geometric":
+      return {
+        svg: svg(
+          DOC_WIDTH,
+          220,
+          `<path d="M0 220 L0 60 L160 220 Z" fill="${color}" fill-opacity="0.12"/>` +
+            `<path d="M0 220 L0 140 L80 220 Z" fill="${color}" fill-opacity="0.2"/>` +
+            `<path d="M794 220 L794 130 L704 220 Z" fill="${color}" fill-opacity="0.1"/>`
+        ),
+        style: { left: 0, bottom: 0, width: DOC_WIDTH, height: 220 },
+      };
+    case "circles":
+      return {
+        svg: svg(
+          300,
+          260,
+          `<circle cx="250" cy="230" r="150" fill="${color}" fill-opacity="0.08"/>` +
+            `<circle cx="150" cy="250" r="70" fill="${color}" fill-opacity="0.1"/>` +
+            `<circle cx="280" cy="90" r="26" fill="none" stroke="${color}" stroke-width="4" stroke-opacity="0.18"/>`
+        ),
+        style: { right: 0, bottom: 0, width: 300, height: 260 },
+      };
+    case "lines":
+      return {
+        svg: svg(
+          DOC_WIDTH,
+          16,
+          Array.from({ length: 70 }, (_, i) => `<path d="M${i * 12} 16 L${i * 12 + 10} 0 L${i * 12 + 16} 0 L${i * 12 + 6} 16 Z" fill="${color}" fill-opacity="0.35"/>`).join("")
+        ),
+        style: { left: 0, bottom: 0, width: DOC_WIDTH, height: 16 },
+      };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Decorative shapes along the page edges, drawn as an <img> of an SVG data URI:
+ * html2canvas paints images reliably, whereas inline <svg> elements can go missing in the PDF.
+ */
+function Ornament({ kind, color }: { kind: Decoration; color: string }) {
+  const o = ornamentSvg(kind, color);
+  if (!o) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt=""
+      aria-hidden
+      src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(o.svg)}`}
+      style={{ position: "absolute", pointerEvents: "none", ...o.style }}
+    />
   );
 }

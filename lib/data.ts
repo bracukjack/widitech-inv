@@ -3,7 +3,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import type { Invoice, Settings } from "@/types/invoice";
 import type { TemplateConfig } from "@/lib/themes";
 import { db, schema } from "@/lib/db";
-import { DEFAULT_DEFAULTS, DEFAULT_PROFILE, normalizeSettings } from "@/lib/normalize";
+import { DEFAULT_BRANDING, DEFAULT_DEFAULTS, DEFAULT_PROFILE, normalizeSettings } from "@/lib/normalize";
 import type { SessionUser } from "@/lib/auth";
 
 export interface AppData {
@@ -26,6 +26,7 @@ export function rowToInvoice(row: typeof schema.invoices.$inferSelect): Invoice 
 export function rowToTemplate(row: typeof schema.templates.$inferSelect): TemplateConfig {
   return {
     ...row.design,
+    decoration: row.design.decoration ?? "none",
     id: row.id,
     name: row.name,
     description: row.description,
@@ -38,12 +39,13 @@ export function defaultSettingsFor(user: Pick<SessionUser, "name" | "email">): S
   return {
     profile: { ...DEFAULT_PROFILE, name: user.name, email: user.email },
     defaults: { ...DEFAULT_DEFAULTS },
+    branding: { ...DEFAULT_BRANDING },
   };
 }
 
 export async function getSettings(user: SessionUser): Promise<Settings> {
   const [row] = await db().select().from(schema.userSettings).where(eq(schema.userSettings.userId, user.id)).limit(1);
-  return row ? normalizeSettings({ profile: row.profile, defaults: row.defaults }) : defaultSettingsFor(user);
+  return row ? normalizeSettings({ profile: row.profile, defaults: row.defaults, branding: row.branding }) : defaultSettingsFor(user);
 }
 
 export async function getAllTemplates(): Promise<TemplateConfig[]> {

@@ -69,7 +69,7 @@ export default function AdminShell({
             <ArrowLeft className="size-4" /> Kembali ke aplikasi
           </Link>
           <a
-            href="/?preview=1"
+            href="/"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"

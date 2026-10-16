@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CURRENCIES, PAYMENT_METHODS } from "@/types/invoice";
 import { FEATURE_ICONS, LANDING_SECTIONS } from "@/lib/landing";
-import { COLOR_KEYS, FONT_STACKS, HEADER_LAYOUTS, TABLE_STYLES, TOTAL_STYLES, type FontKey } from "@/lib/themes";
+import { DECORATIONS, COLOR_KEYS, FONT_STACKS, HEADER_LAYOUTS, TABLE_STYLES, TOTAL_STYLES, type FontKey } from "@/lib/themes";
 
 // Everything that crosses from the browser into a server action is parsed with these.
 
@@ -62,7 +62,14 @@ export const invoiceSchema = z.object({
   paidAt: z.string().optional(),
 });
 
-// Logos are downscaled to a small PNG in the browser before upload.
+// Logos, signatures and stamps are downscaled to a small PNG in the browser before upload.
+const imageSchema = z.union([
+  z.literal(""),
+  z
+    .string()
+    .max(400_000, "Gambar terlalu besar")
+    .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "Format gambar tidak valid"),
+]);
 const logoSchema = z.union([
   z.literal(""),
   z
@@ -92,6 +99,17 @@ export const settingsSchema = z.object({
     paymentMethod: z.enum(PAYMENT_METHODS),
     notes: text(4000),
   }),
+  branding: z.object({
+    color: z.union([z.literal(""), z.string().regex(/^#[0-9a-fA-F]{6}$/, "Warna brand harus format #RRGGBB")]),
+    font: z.union([z.literal(""), z.enum(Object.keys(FONT_STACKS) as [FontKey, ...FontKey[]])]),
+    decoration: z.union([z.literal(""), z.enum(DECORATIONS)]),
+    watermark: z.boolean(),
+    signature: imageSchema,
+    stamp: imageSchema,
+    signatureName: text(120),
+    signatureTitle: text(120),
+    footerText: text(200),
+  }),
 });
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Warna harus format #RRGGBB");
@@ -110,6 +128,7 @@ export const templateSchema = z.object({
   colors: z.object(Object.fromEntries(COLOR_KEYS.map((k) => [k, hex])) as Record<(typeof COLOR_KEYS)[number], typeof hex>),
   font: z.enum(Object.keys(FONT_STACKS) as [FontKey, ...FontKey[]]),
   headingWeight: z.number().int().min(400).max(900),
+  decoration: z.enum(DECORATIONS),
   isActive: z.boolean(),
   sortOrder: z.number().int().min(0).max(10_000),
 });

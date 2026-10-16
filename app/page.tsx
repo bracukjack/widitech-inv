@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import Brand from "@/components/Brand";
 import { Button } from "@/components/ui/button";
@@ -31,10 +30,9 @@ const NAV_LINKS: { id: LandingSectionId; anchor: string; label: string }[] = [
 /** Slight alternating tilt for the "sticker" stat cards. */
 const TILT = ["-rotate-2", "rotate-1", "-rotate-1", "rotate-2"];
 
-export default async function LandingPage({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
-  const [{ preview }, user] = await Promise.all([searchParams, getCurrentUser().catch(() => null)]);
-  // Signed-in users go straight to their invoices (admins can still preview with ?preview=1).
-  if (user && !preview) redirect("/invoices");
+// The landing page is the front door for everyone; signed-in users just get "open dashboard" buttons.
+export default async function LandingPage() {
+  const user = await getCurrentUser().catch(() => null);
 
   const { settings: s, assets, landing: c } = await getSite();
   const origin = await siteOrigin(s);
@@ -281,9 +279,9 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         startHref={startHref}
       />
 
-      {preview && user?.role === "admin" && (
+      {user?.role === "admin" && (
         <div className="border-b border-border bg-muted px-4 py-2 text-center text-xs text-muted-foreground">
-          Mode preview admin —{" "}
+          Anda login sebagai admin —{" "}
           <Link href="/admin/landing" className="font-medium text-foreground underline">
             edit landing page
           </Link>
