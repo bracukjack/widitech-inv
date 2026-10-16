@@ -1,9 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Inter, Playfair_Display, JetBrains_Mono, Cormorant_Garamond, Space_Grotesk } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Caveat,
+  Cormorant_Garamond,
+  Inter,
+  JetBrains_Mono,
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+  Space_Grotesk,
+} from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { getSite, siteOrigin } from "@/lib/site";
+import { contrastText, DEFAULT_SITE, lighten, siteAssetUrl } from "@/lib/site-config";
 
-const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// UI typefaces: Plus Jakarta Sans for text, Bricolage Grotesque for headings, Caveat for hand-written accents.
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], weight: ["500", "600", "700"] });
+const caveat = Caveat({ variable: "--font-caveat", subsets: ["latin"], weight: ["600", "700"], preload: false });
 
 // Typefaces used by invoice templates — loaded on demand, not preloaded.
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], preload: false });
@@ -17,10 +31,45 @@ const cormorant = Cormorant_Garamond({
 });
 const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], preload: false });
 
-export const metadata: Metadata = {
-  title: "Widitech Invoice — Buat invoice cepat",
-  description: "Buat invoice profesional dalam hitungan detik. Banyak template, ekspor PDF, langsung kirim.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { settings: s, assets } = await getSite();
+  const origin = await siteOrigin(s);
+  const title = s.metaTitle || s.siteName;
+  const ogImage = siteAssetUrl("og", assets) ?? "/site-asset/og";
+  const favicon = siteAssetUrl("favicon", assets);
+  return {
+    metadataBase: new URL(origin),
+    title: { default: title, template: `%s — ${s.siteName}` },
+    description: s.metaDescription,
+    keywords: s.keywords
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean),
+    applicationName: s.siteName,
+    openGraph: {
+      type: "website",
+      locale: "id_ID",
+      siteName: s.siteName,
+      title,
+      description: s.metaDescription,
+      url: "/",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: s.siteName }],
+    },
+    twitter: { card: "summary_large_image", title, description: s.metaDescription, images: [ogImage] },
+    icons: favicon ? { icon: favicon, apple: favicon } : { icon: "/favicon.ico" },
+    robots: s.allowIndexing ? { index: true, follow: true } : { index: false, follow: false },
+  };
+}
+
+/** Brand colour from the admin settings, applied over the defaults in globals.css. */
+function brandCss(color: string): string {
+  const c = /^#[0-9a-f]{6}$/i.test(color) ? color : DEFAULT_SITE.primaryColor;
+  const dark = lighten(c, 0.3);
+  return (
+    `:root{--primary:${c};--primary-foreground:${contrastText(c)};--ring:${c};--sidebar-primary:${c};--chart-1:${c}}` +
+    `.dark{--primary:${dark};--primary-foreground:${contrastText(dark)};--ring:${dark};--sidebar-primary:${dark};--chart-1:${dark}}`
+  );
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -35,14 +84,16 @@ export const viewport: Viewport = {
 // Applies the saved light/dark choice before first paint (avoids a flash of the wrong theme).
 const themeScript = `try{var t=localStorage.getItem("theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}`;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const fonts = [dmSans, inter, playfair, jetbrains, cormorant, spaceGrotesk].map((f) => f.variable).join(" ");
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { settings } = await getSite();
+  const fonts = [jakarta, bricolage, caveat, inter, playfair, jetbrains, cormorant, spaceGrotesk].map((f) => f.variable).join(" ");
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" className={fonts} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <style dangerouslySetInnerHTML={{ __html: brandCss(settings.primaryColor) }} />
       </head>
-      <body className={`${fonts} font-sans antialiased bg-background text-foreground`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         {children}
         <Toaster position="top-center" richColors closeButton toastOptions={{ className: "rounded-xl" }} />
       </body>

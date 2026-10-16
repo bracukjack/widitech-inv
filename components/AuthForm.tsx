@@ -80,7 +80,10 @@ export default function AuthForm({ mode, next }: { mode: "login" | "register"; n
 
       <p className="text-center text-sm text-muted-foreground">
         {isLogin ? "Belum punya akun? " : "Sudah punya akun? "}
-        <Link href={isLogin ? "/register" : "/login"} className="font-medium text-primary hover:underline">
+        <Link
+          href={`${isLogin ? "/register" : "/login"}${next ? `?next=${encodeURIComponent(next)}` : ""}`}
+          className="font-medium text-primary hover:underline"
+        >
           {isLogin ? "Daftar" : "Masuk"}
         </Link>
       </p>

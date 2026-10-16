@@ -366,7 +366,7 @@ export default function SettingsPage() {
       <div
         className={cn(
           "pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pt-3 backdrop-blur-lg transition-transform duration-200",
-          dirty ? "translate-y-0" : "pointer-events-none translate-y-full"
+          dirty ? "visible translate-y-0" : "pointer-events-none invisible translate-y-full"
         )}
       >
         <div className="mx-auto flex max-w-3xl items-center gap-3">

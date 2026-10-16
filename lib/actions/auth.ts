@@ -82,7 +82,7 @@ export async function registerAction(_prev: AuthFormState, form: FormData): Prom
   });
 
   await createSession(userId);
-  redirect("/");
+  redirect(safeNext(form.get("next")));
 }
 
 export async function logoutAction(): Promise<void> {
@@ -112,5 +112,5 @@ export async function changePasswordAction(input: { current: string; next: strin
 /** Only allow same-site relative redirects after login. */
 function safeNext(value: FormDataEntryValue | null): string {
   const next = typeof value === "string" ? value : "";
-  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
+  return next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/invoices";
 }

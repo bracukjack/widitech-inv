@@ -79,3 +79,18 @@ export const templates = pgTable("templates", {
   sortOrder: integer("sort_order").notNull().default(0),
   ...timestamps,
 });
+
+/** Admin-editable site content: row 1 = site settings, row 2 = landing page content. */
+export const siteSettings = pgTable("site_settings", {
+  id: integer("id").primaryKey().default(1),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Uploaded site images (logo, favicon, social share image), served by app/site-asset/[key]. */
+export const siteAssets = pgTable("site_assets", {
+  key: text("key").primaryKey(),
+  mime: text("mime").notNull(),
+  data: text("data").notNull(), // base64
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

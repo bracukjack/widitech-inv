@@ -4,13 +4,15 @@ import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { getUserWithInvoices } from "@/lib/admin-data";
 import { requireAdminPage } from "@/lib/auth";
+import UserActions from "@/components/admin/UserActions";
+import { CopyEmail } from "@/components/admin/AdminUsers";
 import { calculateTotals, displayStatus, formatCurrency, formatDate } from "@/lib/invoice";
 import { StatusBadge } from "@/components/invoice-ui";
 
 export const metadata = { title: "Detail pengguna — Admin" };
 
 export default async function AdminUserPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPage();
+  const admin = await requireAdminPage();
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
   const result = await getUserWithInvoices(id);
@@ -24,8 +26,13 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
       </Link>
 
       <div className="rounded-2xl border border-border bg-card p-5 shadow-xs">
-        <p className="text-lg font-semibold">{user.name || "Tanpa nama"}</p>
-        <p className="text-sm text-muted-foreground">{user.email}</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-lg font-semibold">{user.name || "Tanpa nama"}</p>
+            <CopyEmail email={user.email} />
+          </div>
+          {user.id !== admin.id && <UserActions user={user} />}
+        </div>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <Info label="Peran" value={user.role === "admin" ? "Admin" : "Pengguna"} />
           <Info label="Status" value={user.disabled ? "Nonaktif" : "Aktif"} />

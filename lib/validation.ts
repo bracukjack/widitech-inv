@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CURRENCIES, PAYMENT_METHODS } from "@/types/invoice";
+import { FEATURE_ICONS, LANDING_SECTIONS } from "@/lib/landing";
 import { COLOR_KEYS, FONT_STACKS, HEADER_LAYOUTS, TABLE_STYLES, TOTAL_STYLES, type FontKey } from "@/lib/themes";
 
 // Everything that crosses from the browser into a server action is parsed with these.
@@ -115,3 +116,75 @@ export const templateSchema = z.object({
 
 export const emailSchema = z.string().trim().toLowerCase().email("Email tidak valid").max(200);
 export const passwordSchema = z.string().min(8, "Password minimal 8 karakter").max(200);
+
+export const siteSettingsSchema = z.object({
+  siteName: text(60).trim().min(1, "Nama website wajib diisi"),
+  tagline: text(120),
+  siteUrl: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .max(200)
+      .regex(/^https?:\/\/[^\s/]+$/i, "URL situs harus seperti https://domain.com (tanpa / di akhir)"),
+  ]),
+  metaTitle: text(120),
+  metaDescription: text(320),
+  keywords: text(500),
+  allowIndexing: z.boolean(),
+  primaryColor: hex,
+});
+
+/** Max base64 length per uploaded site image (images are resized in the browser first). */
+export const SITE_ASSET_LIMITS = { logo: 600_000, favicon: 150_000, og: 1_500_000 } as const;
+
+export const siteAssetSchema = z
+  .string()
+  .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/, "Format gambar tidak valid");
+
+const line = (max: number) => z.string().max(max);
+const enabled = z.boolean();
+
+export const landingSchema = z.object({
+  order: z.array(z.enum(LANDING_SECTIONS)).max(LANDING_SECTIONS.length),
+  hero: z.object({
+    enabled,
+    badge: line(80),
+    title: line(140),
+    subtitle: line(400),
+    primaryCta: line(40),
+    secondaryCta: line(40),
+    bullets: z.array(line(60)).max(6),
+    audiences: z.array(line(40)).max(20),
+  }),
+  stats: z.object({ enabled, items: z.array(z.object({ value: line(20), label: line(60) })).max(6) }),
+  features: z.object({
+    enabled,
+    eyebrow: line(40),
+    title: line(140),
+    subtitle: line(300),
+    items: z.array(z.object({ icon: z.enum(FEATURE_ICONS), title: line(80), text: line(300) })).max(18),
+  }),
+  demo: z.object({ enabled, eyebrow: line(40), title: line(140), subtitle: line(300), buttonLabel: line(40) }),
+  templates: z.object({ enabled, eyebrow: line(40), title: line(140), subtitle: line(300), buttonLabel: line(40) }),
+  steps: z.object({ enabled, eyebrow: line(40), title: line(140), items: z.array(z.object({ title: line(80), text: line(300) })).max(8) }),
+  pricing: z.object({
+    enabled,
+    eyebrow: line(40),
+    title: line(140),
+    subtitle: line(300),
+    planName: line(40),
+    badge: line(40),
+    price: line(30),
+    period: line(30),
+    features: z.array(line(100)).max(16),
+    buttonLabel: line(40),
+    note: line(140),
+  }),
+  faq: z.object({ enabled, eyebrow: line(40), title: line(140), items: z.array(z.object({ q: line(200), a: line(1000) })).max(20) }),
+  cta: z.object({ enabled, title: line(140), subtitle: line(300), buttonLabel: line(40) }),
+  footer: z.object({
+    text: line(200),
+    contactEmail: z.union([z.literal(""), z.string().trim().email("Email kontak tidak valid").max(200)]),
+  }),
+});

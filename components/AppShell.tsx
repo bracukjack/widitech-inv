@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FileText, LogOut, Plus, Settings, ShieldCheck } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import Brand from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import { useInvoiceStore } from "@/lib/store";
 import { logoutAction } from "@/lib/actions/auth";
@@ -13,7 +14,15 @@ import { cn } from "@/lib/utils";
 
 const REFRESH_AFTER_MS = 30_000;
 
-export default function AppShell({ initial, children }: { initial: AppData; children: React.ReactNode }) {
+export default function AppShell({
+  initial,
+  brand,
+  children,
+}: {
+  initial: AppData;
+  brand: { name: string; logo: string | null };
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const user = initial.user;
 
@@ -36,24 +45,21 @@ export default function AppShell({ initial, children }: { initial: AppData; chil
   }, []);
 
   const nav = [
-    { href: "/", label: "Invoice" },
+    { href: "/invoices", label: "Invoice" },
     { href: "/settings", label: "Pengaturan" },
     ...(user.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 
   // Invoice screens bring their own bottom action bar on mobile.
   const showBottomNav = !pathname.startsWith("/invoice/");
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 sm:px-6">
-          <Link href="/" className="mr-4 flex items-center gap-2 font-semibold tracking-tight">
-            <span className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-              W
-            </span>
-            <span className="text-[15px]">Widitech Invoice</span>
+          <Link href="/invoices" className="mr-4 min-w-0">
+            <Brand name={brand.name} logo={brand.logo} />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => (
@@ -86,7 +92,7 @@ export default function AppShell({ initial, children }: { initial: AppData; chil
       {showBottomNav && (
         <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/90 px-6 pt-2 backdrop-blur-lg md:hidden">
           <div className="mx-auto flex max-w-sm items-end justify-between">
-            <BottomLink href="/" label="Invoice" icon={FileText} active={isActive("/")} />
+            <BottomLink href="/invoices" label="Invoice" icon={FileText} active={isActive("/invoices")} />
             <Link
               href="/invoice/new"
               aria-label="Buat invoice"

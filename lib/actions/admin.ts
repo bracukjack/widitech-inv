@@ -6,9 +6,13 @@ import { z } from "zod";
 import type { TemplateConfig } from "@/lib/themes";
 import { DEFAULT_TEMPLATE_ID } from "@/lib/themes";
 import { db, schema } from "@/lib/db";
-import { destroyAllSessions, requireAdmin } from "@/lib/auth";
+import { randomBytes } from "node:crypto";
+import { destroyAllSessions, hashPassword, requireAdmin } from "@/lib/auth";
 import { getAllTemplates, rowToTemplate } from "@/lib/data";
-import { templateSchema } from "@/lib/validation";
+import { landingSchema, passwordSchema, SITE_ASSET_LIMITS, siteAssetSchema, siteSettingsSchema, templateSchema } from "@/lib/validation";
+import { SITE_ASSET_KEYS, type SiteAssetKey, type SiteSettings } from "@/lib/site-config";
+import type { LandingContent } from "@/lib/landing";
+import { LANDING_ROW, SITE_ROW } from "@/lib/site";
 import { run, UserError, type ActionResult } from "@/lib/actions/result";
 
 export async function setUserDisabledAction(userId: string, disabled: boolean): Promise<ActionResult> {
@@ -18,7 +22,7 @@ export async function setUserDisabledAction(userId: string, disabled: boolean): 
     if (id === admin.id) throw new UserError("Tidak bisa menonaktifkan akun sendiri");
     await db().update(schema.users).set({ disabled, updatedAt: new Date() }).where(eq(schema.users.id, id));
     if (disabled) await destroyAllSessions(id);
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     return null;
   });
 }
@@ -75,5 +79,87 @@ export async function moveTemplateAction(id: string, direction: -1 | 1): Promise
       }
     });
     return getAllTemplates();
+  });
+}
+
+export async function saveSiteSettingsAction(input: unknown): Promise<ActionResult<SiteSettings>> {
+  return run(async () => {
+    await requireAdmin();
+    const data = siteSettingsSchema.parse(input);
+    await db()
+      .insert(schema.siteSettings)
+      .values({ id: SITE_ROW, data, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: schema.siteSettings.id, set: { data, updatedAt: new Date() } });
+    // Metadata, colours and branding are rendered in layouts — refresh everything.
+    revalidatePath("/", "layout");
+    return data;
+  });
+}
+
+/** Uploads (data URL) or removes (null) the logo, favicon or social share image. */
+export async function saveSiteAssetAction(key: SiteAssetKey, dataUrl: string | null): Promise<ActionResult<number | null>> {
+  return run(async () => {
+    await requireAdmin();
+    const k = z.enum(SITE_ASSET_KEYS).parse(key);
+    if (dataUrl === null) {
+      await db().delete(schema.siteAssets).where(eq(schema.siteAssets.key, k));
+      revalidatePath("/", "layout");
+      return null;
+    }
+    const url = siteAssetSchema.parse(dataUrl);
+    if (url.length > SITE_ASSET_LIMITS[k]) throw new UserError("Ukuran gambar terlalu besar");
+    const [, mime, data] = /^data:(image\/[a-z]+);base64,(.+)$/.exec(url)!;
+    const now = new Date();
+    await db()
+      .insert(schema.siteAssets)
+      .values({ key: k, mime, data, updatedAt: now })
+      .onConflictDoUpdate({ target: schema.siteAssets.key, set: { mime, data, updatedAt: now } });
+    revalidatePath("/", "layout");
+    return now.getTime();
+  });
+}
+
+const PASSWORD_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+
+/** Readable random password (no 0/O, 1/l/I) for handing to a user. */
+function generatePassword(length = 12): string {
+  const bytes = randomBytes(length);
+  return Array.from(bytes, (b) => PASSWORD_ALPHABET[b % PASSWORD_ALPHABET.length]).join("");
+}
+
+/**
+ * Sets a new password for a user — the given one, or a generated one when null —
+ * and signs them out everywhere. Returns the password so the admin can pass it on.
+ */
+export async function resetUserPasswordAction(
+  userId: string,
+  newPassword: string | null
+): Promise<ActionResult<{ password: string; email: string }>> {
+  return run(async () => {
+    const admin = await requireAdmin();
+    const id = z.string().uuid().parse(userId);
+    if (id === admin.id) throw new UserError("Ganti password Anda sendiri lewat menu Pengaturan");
+    const password = newPassword === null ? generatePassword() : passwordSchema.parse(newPassword);
+    const [user] = await db()
+      .update(schema.users)
+      .set({ passwordHash: await hashPassword(password), updatedAt: new Date() })
+      .where(eq(schema.users.id, id))
+      .returning({ email: schema.users.email });
+    if (!user) throw new UserError("Pengguna tidak ditemukan");
+    await destroyAllSessions(id);
+    return { password, email: user.email };
+  });
+}
+
+export async function saveLandingAction(input: unknown): Promise<ActionResult<LandingContent>> {
+  return run(async () => {
+    await requireAdmin();
+    const data = landingSchema.parse(input) as LandingContent;
+    await db()
+      .insert(schema.siteSettings)
+      .values({ id: LANDING_ROW, data: data as unknown as Record<string, unknown>, updatedAt: new Date() })
+      .onConflictDoUpdate({ target: schema.siteSettings.id, set: { data: data as unknown as Record<string, unknown>, updatedAt: new Date() } });
+    revalidatePath("/", "layout");
+    return data;
   });
 }

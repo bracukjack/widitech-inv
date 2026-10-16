@@ -122,7 +122,7 @@ export async function requireUserPage(): Promise<SessionUser> {
 
 export async function requireAdminPage(): Promise<SessionUser> {
   const user = await requireUserPage();
-  if (user.role !== "admin") redirect("/");
+  if (user.role !== "admin") redirect("/invoices");
   return user;
 }
 

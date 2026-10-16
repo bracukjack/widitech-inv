@@ -75,7 +75,7 @@ export function NotFound() {
         Mungkin sudah dihapus, atau tersimpan di browser/perangkat lain.
       </p>
       <Button asChild className="mt-2">
-        <Link href="/">Kembali ke daftar invoice</Link>
+        <Link href="/invoices">Kembali ke daftar invoice</Link>
       </Button>
     </div>
   );

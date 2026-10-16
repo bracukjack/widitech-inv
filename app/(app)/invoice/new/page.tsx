@@ -19,15 +19,22 @@ export default function NewInvoicePage() {
 
 function NewInvoice() {
   const hydrated = useInvoiceStore((s) => s.hydrated);
-  const duplicateId = useSearchParams().get("duplicate");
+  const params = useSearchParams();
+  const duplicateId = params.get("duplicate");
+  const templateId = params.get("template");
   if (!hydrated) return <PageLoader />;
-  return <NewInvoiceEditor key={duplicateId ?? "new"} duplicateId={duplicateId} />;
+  return <NewInvoiceEditor key={duplicateId ?? templateId ?? "new"} duplicateId={duplicateId} templateId={templateId} />;
 }
 
-function startingPoint(duplicateId: string | null): { invoice: Invoice; resumedDraft: boolean } {
-  const { invoices, settings } = useInvoiceStore.getState();
+function startingPoint(duplicateId: string | null, templateId: string | null): { invoice: Invoice; resumedDraft: boolean } {
+  const { invoices, settings, templates } = useInvoiceStore.getState();
   const source = duplicateId ? invoices.find((i) => i.id === duplicateId) : undefined;
   if (source) return { invoice: duplicateInvoice(source, settings, invoices), resumedDraft: false };
+
+  // Chosen from the landing page's template gallery.
+  if (templateId && templates.some((t) => t.id === templateId && t.isActive)) {
+    return { invoice: { ...createInvoice(settings, invoices), theme: templateId }, resumedDraft: false };
+  }
 
   const draft = loadNewDraft();
   if (draft && !invoices.some((i) => i.id === draft.id)) return { invoice: draft, resumedDraft: true };
@@ -35,10 +42,10 @@ function startingPoint(duplicateId: string | null): { invoice: Invoice; resumedD
   return { invoice: createInvoice(settings, invoices), resumedDraft: false };
 }
 
-function NewInvoiceEditor({ duplicateId }: { duplicateId: string | null }) {
+function NewInvoiceEditor({ duplicateId, templateId }: { duplicateId: string | null; templateId: string | null }) {
   const router = useRouter();
   const saveInvoice = useInvoiceStore((s) => s.saveInvoice);
-  const [start, setStart] = useState(() => startingPoint(duplicateId));
+  const [start, setStart] = useState(() => startingPoint(duplicateId, templateId));
 
   useEffect(() => {
     if (!start.resumedDraft) return;
@@ -63,7 +70,7 @@ function NewInvoiceEditor({ duplicateId }: { duplicateId: string | null }) {
       keepDraft={!duplicateId}
       onCancel={() => {
         clearNewDraft();
-        router.push(duplicateId ? `/invoice/${duplicateId}` : "/");
+        router.push(duplicateId ? `/invoice/${duplicateId}` : "/invoices");
       }}
       onSave={async (inv) => {
         const saved = await saveInvoice(inv);

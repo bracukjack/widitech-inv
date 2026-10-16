@@ -1,12 +1,17 @@
 import { listUsers } from "@/lib/admin-data";
 import { requireAdminPage } from "@/lib/auth";
 import AdminUsers from "@/components/admin/AdminUsers";
+import PageHeader from "@/components/admin/PageHeader";
 
 export const metadata = { title: "Pengguna — Admin" };
 
 export default async function AdminUsersPage() {
-  // Checked here too: layouts aren't guaranteed to re-run on client-side navigation.
   const me = await requireAdminPage();
   const users = await listUsers();
-  return <AdminUsers users={users} currentUserId={me.id} />;
+  return (
+    <>
+      <PageHeader title="Pengguna" description={`${users.length} akun terdaftar. Reset password atau nonaktifkan akun dari sini.`} />
+      <AdminUsers users={users} currentUserId={me.id} />
+    </>
+  );
 }

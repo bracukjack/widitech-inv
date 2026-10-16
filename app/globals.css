@@ -41,8 +41,10 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-dm-sans);
-  --font-mono: var(--font-dm-mono);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-jakarta), ui-sans-serif, sans-serif;
+  --font-hand: var(--font-caveat), cursive;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 :root {
@@ -123,6 +125,15 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Headings use the display face (invoice documents set their own fonts inline). */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
 * {
@@ -142,3 +153,44 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ---------- landing page motion ---------- */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -40px) scale(1.08); }
+  66% { transform: translate(-25px, 20px) scale(0.95); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.animate-blob { animation: blob 14s ease-in-out infinite; }
+.animate-float { animation: float 5s ease-in-out infinite; }
+.animate-float-slow { animation: float 7s ease-in-out infinite; }
+.animate-marquee { animation: marquee 40s linear infinite; }
+.animate-spin-slow { animation: spin-slow 18s linear infinite; }
+.animate-draw { stroke-dasharray: 600; stroke-dashoffset: 600; animation: draw 1.4s 0.4s ease-out forwards; }
+.animate-wiggle { animation: wiggle 2.4s ease-in-out infinite; }
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.96) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pop { animation: pop-in 0.35s ease-out both; }
+
+/* Scroll reveal (see components/landing/Reveal.tsx) */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob, .animate-float, .animate-float-slow, .animate-marquee, .animate-spin-slow, .animate-wiggle, .animate-pop { animation: none; }
+  .animate-draw { animation: none; stroke-dashoffset: 0; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+

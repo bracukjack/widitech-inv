@@ -81,7 +81,7 @@ export default function InvoiceDetailPage() {
 
   const handleDelete = () => {
     const removed = deleteInvoice(invoice.id);
-    router.push("/");
+    router.push("/invoices");
     toast(`Invoice ${invoice.invoiceNumber} dihapus`, {
       duration: 6000,
       action: removed ? { label: "Batalkan", onClick: () => restoreInvoice(removed) } : undefined,
@@ -99,7 +99,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="px-4 pt-4 pb-32 sm:px-6 lg:pt-6 lg:pb-12">
-      <Link href="/" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/invoices" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> Semua invoice
       </Link>
 
